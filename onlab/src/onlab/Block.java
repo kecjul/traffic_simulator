@@ -1,6 +1,7 @@
 package onlab;
 
 import java.awt.geom.Point2D;
+import java.awt.geom.Point2D.Float;
 
 
 public class Block extends RoadObject{
@@ -17,6 +18,14 @@ public class Block extends RoadObject{
 		currentTime = System.nanoTime() / 1000000000;
 	}
 	
+	public Block(Float startPosition, float duration) {
+		count++;
+		id = count;	
+		this.position = startPosition;
+		currentTime = System.nanoTime() / 1000000000;
+		this.duration = duration;
+	}
+
 	public boolean tick(){
 		float lastTime = currentTime;
 		currentTime = System.nanoTime() / 1000000000;

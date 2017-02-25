@@ -12,20 +12,34 @@ import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
+import org.jfree.data.time.Millisecond;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
+
 import onlab.Controller.Status;
 
 public class Window extends JFrame implements ActionListener, MouseListener {
 	Controller c;
 	Surface surface;
-	JPanel settings, combo, options, car, block, highWay, select, scar, sblock;
+	JFrame chartFrame;
+	JPanel settings, combo, options, car, block, highWay, select, scar, sblock, log;
 	JLabel newObjectTitle, carTitle, driverTitle, blockTitle, aditional, selectedTitle, selectedCarObject, selectedBlockObject;
 	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLenght;
 	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, tblockDuration, thwLenght;
 	JLabel  slcarMaxSpeed, slcarMaxAcc, slcarColor, sldriverPrefSpeed, sldriverRange, sldriverSafety, slblockDuration, slhwLenght;
 	JTextField stcarMaxSpeed, stcarMaxAcc, stdriverPrefSpeed, stdriverRange, stdriverSafety, stblockDuration, sthwLenght;
 	JComboBox typeChooser , colorChooser, scolorChooser;
-	JButton bPause, bSave, bLoad, bcAccept, bbAccept, bcDel, bbDel;
-	JSplitPane settingsSplit, selectSplit; 
+	JButton bPause, bSave, bLoad, bcAccept, bbAccept, bcDel, bbDel, bChart;
+	JTextArea tLog;
+	JScrollPane logScroll;
+	JSplitPane split1, split2, split3; 
+	JSplitPane settingsSplit, selectSplit, logSplit; 
 	final static String CARPANEL = "Car";
 	final static String BLOCKPANEL = "Road Block";
 	float size = 450;
@@ -33,6 +47,12 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	String[] colorsS = {"White", "Yellow", "Green", "Cyan", "Blue", "Pink", "Orange"};
 	Color[] colorsC = {Color.WHITE ,Color.YELLOW ,Color.GREEN ,Color.CYAN ,Color.BLUE ,Color.PINK ,Color.ORANGE};
 	RoadObject selected;
+	ArrayList<TimeSeries> series = new ArrayList<TimeSeries>();
+	ArrayList<TimeSeriesCollection> dataset= new ArrayList<TimeSeriesCollection>();
+	JFreeChart chart;
+	XYPlot plot;
+	ChartPanel chartPanel;
+	JPanel content;
 
 	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	int screenWidth = screenSize.width;
@@ -46,33 +66,47 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	private void initUI() {
 		Dimension surfaceMinimumSize = new Dimension(screenWidth - 280, screenHeight - 150);
 		Dimension settingsMinimumSize = new Dimension(280, screenHeight);
+		Dimension logMinimumSize = new Dimension(280, screenHeight);
 		int settingsSplitPositionY = screenWidth - 280;
 		int selectSplitPositionX = screenHeight - 200;
+		int logSplitPositionX = screenHeight - 200;
 		
 		surface = new Surface();
 		surface.addMouseListener(this);
 		settings = new JPanel();
 		settings.setLayout(new BoxLayout(settings, BoxLayout.Y_AXIS));
 		setOptions();		
-
-		settingsSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		settingsSplit.setLeftComponent(surface);
-		settingsSplit.setRightComponent(settings);
-		settingsSplit.setDividerLocation(settingsSplitPositionY);
-		settingsSplit.disable();
+		log = new JPanel();
+		log.setLayout(new BorderLayout());
+		setLogPanel();
+		setCharts();	
 		
 		surface.setMinimumSize(surfaceMinimumSize);
 		settings.setMinimumSize(settingsMinimumSize);
+		log.setMinimumSize(logMinimumSize);	
 		
 		select = new JPanel();
 		setSelectPanel();
+		
+		logSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		logSplit.setTopComponent(settings);
+		logSplit.setBottomComponent(log);
+		logSplit.setDividerLocation(logSplitPositionX);
+		
 		selectSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		selectSplit.setTopComponent(settingsSplit);
+		selectSplit.setTopComponent(surface);
 		selectSplit.setBottomComponent(select);
 		selectSplit.setDividerLocation(selectSplitPositionX);
-		selectSplit.disable();
+		selectSplit.setEnabled(false);
 		
-		add(selectSplit);
+		settingsSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		settingsSplit.setLeftComponent(selectSplit);
+		settingsSplit.setRightComponent(logSplit);
+		settingsSplit.setDividerLocation(settingsSplitPositionY);
+		settingsSplit.setEnabled(false);
+
+		
+		add(settingsSplit);
 		
 		setTitle("Traffic jam simulator");
 		
@@ -106,8 +140,10 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		carLayout.putConstraint(SpringLayout.NORTH, slcarColor, 25, SpringLayout.NORTH, slcarMaxAcc);
 
 
-		stcarMaxSpeed = new JTextField(10);
-		stcarMaxAcc = new JTextField(10);
+		stcarMaxSpeed = new JTextField(5);
+		stcarMaxAcc = new JTextField(5);
+		stcarMaxSpeed.setToolTipText("km/h");
+		stcarMaxAcc.setToolTipText("from 0 to 100 km/h in sec");
 		scolorChooser = new JComboBox(colorsS);
 		scar.add(stcarMaxSpeed);
 		scar.add(stcarMaxAcc);
@@ -126,36 +162,39 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		scar.add(sldriverPrefSpeed);
 		scar.add(sldriverRange);
 		scar.add(sldriverSafety);
-		carLayout.putConstraint(SpringLayout.WEST, sldriverPrefSpeed, 240, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, sldriverPrefSpeed, 200, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, sldriverPrefSpeed, 30, SpringLayout.NORTH, scar);
-		carLayout.putConstraint(SpringLayout.WEST, sldriverRange, 240, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, sldriverRange, 200, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, sldriverRange, 25, SpringLayout.NORTH, sldriverPrefSpeed);
-		carLayout.putConstraint(SpringLayout.WEST, sldriverSafety, 240, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, sldriverSafety, 200, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, sldriverSafety, 25, SpringLayout.NORTH, sldriverRange);
-		
-		stdriverPrefSpeed = new JTextField(10);
-		stdriverRange = new JTextField(10);
-		stdriverSafety = new JTextField(10);
+
+		stdriverPrefSpeed = new JTextField(5);
+		stdriverRange = new JTextField(5);
+		stdriverSafety = new JTextField(5);
+		stdriverPrefSpeed.setToolTipText("km/h");
+		stdriverRange.setToolTipText("km");
+		stdriverSafety.setToolTipText("km");
 		scar.add(stdriverPrefSpeed);
 		scar.add(stdriverRange);
 		scar.add(stdriverSafety);
-		carLayout.putConstraint(SpringLayout.WEST, stdriverPrefSpeed, 360, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, stdriverPrefSpeed, 300, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, stdriverPrefSpeed, 30, SpringLayout.NORTH, scar);
-		carLayout.putConstraint(SpringLayout.WEST, stdriverRange, 360, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, stdriverRange, 300, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, stdriverRange, 25, SpringLayout.NORTH, sldriverPrefSpeed);
-		carLayout.putConstraint(SpringLayout.WEST, stdriverSafety, 360, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, stdriverSafety, 300, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, stdriverSafety, 25, SpringLayout.NORTH, sldriverRange);
 		
 		bcAccept = new JButton("Accept");
 		bcAccept.addActionListener(this);
 		scar.add(bcAccept);
-		carLayout.putConstraint(SpringLayout.WEST, bcAccept, 480, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, bcAccept, 30, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.WEST, bcAccept, 5, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.NORTH, bcAccept, 30, SpringLayout.NORTH, scolorChooser);
 		bcDel = new JButton("Delete");
 		bcDel.addActionListener(this);
 		scar.add(bcDel);
 		carLayout.putConstraint(SpringLayout.WEST, bcDel, 80, SpringLayout.WEST, bcAccept);
-		carLayout.putConstraint(SpringLayout.NORTH, bcDel, 30, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.NORTH, bcDel, 30, SpringLayout.NORTH, scolorChooser);
 		
 		SpringLayout blockLayout = new SpringLayout();
 		sblock = new JPanel(blockLayout);
@@ -172,6 +211,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		blockLayout.putConstraint(SpringLayout.NORTH, slblockDuration, 25, SpringLayout.NORTH, selectedBlockObject);
 
 		stblockDuration = new JTextField(10);
+		stblockDuration.setToolTipText("sec");
 		sblock.add(stblockDuration);
 		blockLayout.putConstraint(SpringLayout.WEST, stblockDuration, 120, SpringLayout.WEST, sblock);
 		blockLayout.putConstraint(SpringLayout.NORTH, stblockDuration, 25, SpringLayout.NORTH, selectedBlockObject);
@@ -209,9 +249,13 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		aditional =  new JLabel("Aditional options: ");
 		lhwLenght = new JLabel("HighWay lenght: ");
 		thwLenght = new JTextField(10);
+		thwLenght.setText("12960000");
+		thwLenght.setToolTipText("12.960.000 km is ideal as 100 km/h speed will show as 1 deg/sec");
 		thwLenght.addActionListener(this);
 		bPause = new JButton("Pause");
 		bPause.addActionListener(this);
+		bChart = new JButton("Speed chart");
+		bChart.addActionListener(this);
 		bSave = new JButton("Save");
 		bSave.addActionListener(this);
 		bLoad = new JButton("Load");
@@ -221,6 +265,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		highWay.add(lhwLenght);
 		highWay.add(thwLenght);
 		highWay.add(bPause);
+		highWay.add(bChart);
 		highWay.add(bSave);
 		highWay.add(bLoad);
 		hwLayout.putConstraint(SpringLayout.WEST, aditional, 5, SpringLayout.WEST, highWay);
@@ -230,10 +275,12 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		hwLayout.putConstraint(SpringLayout.WEST, thwLenght, 120, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, thwLenght, 25, SpringLayout.NORTH, aditional);
 		hwLayout.putConstraint(SpringLayout.WEST, bPause, 5, SpringLayout.WEST, highWay);
-		hwLayout.putConstraint(SpringLayout.NORTH, bPause, 25, SpringLayout.NORTH, lhwLenght);
-		hwLayout.putConstraint(SpringLayout.WEST, bSave, 5, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.NORTH, bPause, 50, SpringLayout.NORTH, lhwLenght);
+		hwLayout.putConstraint(SpringLayout.WEST, bChart, 80, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.NORTH, bChart, 50, SpringLayout.NORTH, lhwLenght);
+		hwLayout.putConstraint(SpringLayout.WEST, bSave, 10, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bSave, 35, SpringLayout.NORTH, bPause);
-		hwLayout.putConstraint(SpringLayout.WEST, bLoad, 75, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.WEST, bLoad, 80, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bLoad, 35, SpringLayout.NORTH, bPause);
 		
 		settings.add(combo);
@@ -266,6 +313,10 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 
 		tcarMaxSpeed = new JTextField(10);
 		tcarMaxAcc = new JTextField(10);
+		tcarMaxSpeed.setText("100");
+		tcarMaxAcc.setText("10");
+		tcarMaxSpeed.setToolTipText("km/h");
+		tcarMaxAcc.setToolTipText("from 0 to 100 km/h in sec");
 		colorChooser = new JComboBox(colorsS);
 		car.add(tcarMaxSpeed);
 		car.add(tcarMaxAcc);
@@ -299,6 +350,12 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		tdriverPrefSpeed = new JTextField(10);
 		tdriverRange = new JTextField(10);
 		tdriverSafety = new JTextField(10);
+		tdriverPrefSpeed.setText("80");
+		tdriverRange.setText("50");
+		tdriverSafety.setText("20");
+		tdriverPrefSpeed.setToolTipText("km/h");
+		tdriverRange.setToolTipText("km");
+		tdriverSafety.setToolTipText("km");		
 		car.add(tdriverPrefSpeed);
 		car.add(tdriverRange);
 		car.add(tdriverSafety);
@@ -328,10 +385,74 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		blockLayout.putConstraint(SpringLayout.NORTH, lblockDuration, 25, SpringLayout.NORTH, blockTitle);
 
 		tblockDuration = new JTextField(10);
+		tblockDuration.setText("10");
+		tblockDuration.setToolTipText("sec");
 		block.add(tblockDuration);
 		blockLayout.putConstraint(SpringLayout.WEST, tblockDuration, 120, SpringLayout.WEST, block);
 		blockLayout.putConstraint(SpringLayout.NORTH, tblockDuration, 25, SpringLayout.NORTH, blockTitle);
 	}
+	
+	public void setLogPanel(){
+		tLog = new JTextArea();
+		tLog.setEditable(false);
+		logScroll = new JScrollPane(tLog);
+		log.add(logScroll);
+	}
+	
+	public void setCharts(){
+		chartFrame = new JFrame();
+		chartFrame.setTitle("Traffic jam simulator - Chart of the cars speed");
+		chartFrame.setSize(500, 300);
+		chartFrame.setDefaultCloseOperation(HIDE_ON_CLOSE);
+		series.add(new TimeSeries("Random Data"));
+	    dataset.add(new TimeSeriesCollection(series.get(0)));
+	    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+	            "Speed of the cars", 
+	            "Time", 
+	            "Speed(m/s)",
+	            dataset.get(0), 
+	            true, 
+	            true, 
+	            false
+	        );
+	    plot = chart.getXYPlot();
+        ValueAxis axis = plot.getDomainAxis();
+        axis.setAutoRange(true);
+        axis.setFixedAutoRange(60000.0);  // 60 seconds
+        axis = plot.getRangeAxis();
+        axis.setRange(0.0, 200.0); 
+	    ChartPanel chartPanel = new ChartPanel(chart);
+	    
+	    JPanel content = new JPanel(new BorderLayout());
+        content.add(chartPanel);
+        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+        chartFrame.setContentPane(content);
+        
+        
+		 
+	}
+	public void newChartData(String[] name, Float[] data, Color[] color){
+		Millisecond now = new Millisecond();
+		for (int i = 0; i < name.length; i++) {
+			if( name[i] != null){
+				if(i >= series.size()){
+					series.add(new TimeSeries(name[i]));
+					dataset.add(new TimeSeriesCollection(series.get(i)));
+					plot.setDataset(i, dataset.get(i));
+					plot.setRenderer(i, new StandardXYItemRenderer());
+					plot.getRenderer().setSeriesPaint(i, color[i]);
+				}
+				if(!series.get(i).getKey().equals(name[i])){
+					series.get(i).setKey(name[i]);
+					plot.getRenderer().setSeriesPaint(i, color[i]);
+				}
+				series.get(i).add(now, data[i]);
+				System.out.println("plotColor: " + plot.getRenderer().getSeriesPaint(i) + " carColor: " + color[i]);
+				plot.getRenderer().getSeriesPaint(i);
+			}
+		}
+	}
+	
 	
 	
 	public void typeSelected(String type) {
@@ -372,6 +493,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 			} else if("Start".equals(text)){
 				bPause.setText("Pause");
 				c.stop();
+			}else if(b == bChart){
+				chartFrame.setVisible(true);
 			} else if("Save".equals(text)){
 				String extension = "txt";
 				JFileChooser fc = new JFileChooser();
@@ -415,6 +538,26 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		}
 	}
 	
+	public void setLog(){
+		String newRow = null;
+		String type = null; 
+		for (int i = 1; i <= RoadObject.count; i++) {
+			type = c.hw.getType(i);
+			if(type != null && "Car".equals(type)){
+				if("driving".equals(c.hw.getStatus(i)))
+					newRow = "Car " + Integer.toString(i) + " is " + c.hw.getStatus(i) + " with speed: " + c.hw.getSpeed(i) +".";
+				else
+					newRow = "Car " + Integer.toString(i) + " is " + c.hw.getStatus(i) + ".";
+			}
+			if(type != null && "Block".equals(type)){
+				newRow = "Block " + Integer.toString(i) + " has " + c.hw.getStatus(i) + " seconds left.";
+			}
+			if(newRow != null){
+				tLog.append(newRow);
+				tLog.append(System.lineSeparator());
+			}
+		}
+	}
 	public Point2D.Float reConvertCoords(Point2D.Float position){
 		return new Point2D.Float(position.x - (size/2), size - (position.y + (size/2)));
 	}
@@ -425,12 +568,16 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 				selectSplit.setBottomComponent(scar);
 //				select.remove(sblock);
 //				select.add(scar);
-				selectedCarObject.setText("Car" + selected.id);
+				selectedCarObject.setText("Car " + selected.id);
 				stcarMaxSpeed.setText(Float.toString(((Car) selected).maxSpeed));
 				stcarMaxAcc.setText(Float.toString(((Car) selected).maxAcc));
 				for (int i = 0; i < colorsC.length; i++){
-					if(colorsC[i] == ((Car) selected).color){
+					if(colorsC[i].getRed() == ((Car) selected).color.getRed() &&
+						colorsC[i].getGreen() == ((Car) selected).color.getGreen() &&
+						colorsC[i].getBlue()== ((Car) selected).color.getBlue())
+					{
 						scolorChooser.setSelectedIndex(i);
+						break;
 					}
 				}
 				stdriverPrefSpeed.setText(Float.toString(((Car) selected).driver.prefSpeed));
@@ -441,7 +588,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 				selectSplit.setBottomComponent(sblock);
 //				select.remove(scar);
 //				select.add(sblock);
-				selectedBlockObject.setText("Block" + selected.id);
+				selectedBlockObject.setText("Block " + selected.id);
 				stblockDuration.setText(Float.toString(((Block) selected).duration));
 			}
 			

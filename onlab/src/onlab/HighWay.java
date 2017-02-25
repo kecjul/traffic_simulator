@@ -27,19 +27,12 @@ public class HighWay {
 
 	void addCar(Point2D.Float click, float maxSpeed, float maxAcc, Color color,
 			float prefSpeed, float range, float safety) {
-		Car newCar = new Car(getPos(getAngle(click)));
-		newCar.maxSpeed = maxSpeed;
-		newCar.maxAcc = maxAcc;
-		newCar.color = color;
-		newCar.driver.prefSpeed = prefSpeed;
-		newCar.driver.rangeOfView = range;
-		newCar.driver.safetyGap = safety;
+		Car newCar = new Car(getPos(getAngle(click)), maxSpeed, maxAcc, color, prefSpeed, range, safety);
 		roadObjects.add(newCar);
 	}
 
 	void addBlock(Point2D.Float click, float duration) {
-		Block newBlock = new Block(getPos(getAngle(click)));
-		newBlock.duration = duration;
+		Block newBlock = new Block(getPos(getAngle(click)), duration);
 		roadObjects.add(newBlock);
 	}
 
@@ -53,6 +46,7 @@ public class HighWay {
 				((Car) roadObject).driver.prefSpeed = prefSpeed;
 				((Car) roadObject).driver.rangeOfView = range;
 				((Car) roadObject).driver.safetyGap = safety;
+				break;
 			}
 		}
 	}
@@ -61,6 +55,7 @@ public class HighWay {
 		for (RoadObject roadObject : roadObjects) {
 			if (roadObject.id == id) {
 				((Block) roadObject).duration = duration;
+				break;
 			}
 		}
 	}
@@ -117,7 +112,8 @@ public class HighWay {
 	public RoadObject getSight(Car asker) {
 		RoadObject result = null;
 		float minAngle = 360;
-		for (RoadObject roadObject : roadObjects) {
+		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) roadObjects.clone();
+		for (RoadObject roadObject : ros) {
 			float angle = (getAngle(roadObject.position) + 360 - getAngle(asker.position)) % 360;
 			if (angle < minAngle && asker != roadObject) {
 				minAngle = angle;
@@ -131,7 +127,8 @@ public class HighWay {
 	}
 
 	public void newAngle(Car thisCar) {
-		float change = thisCar.actualSpeed/100;
+		// /100 because of timing is triggered 100 times a second and *360 because speed is in km/h not km/sec
+		float change = thisCar.actualSpeed/100*360;
 		float angle = getAngle(thisCar.position);
 		angle += (change / lenght * 360);
 		angle%=360;
@@ -143,9 +140,9 @@ public class HighWay {
 	}
 
 	public void move() {
-		ArrayList<RoadObject> copyRO = roadObjects;
+		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) roadObjects.clone();
 		ArrayList<RoadObject> deletables = new ArrayList<RoadObject>();
-		for (RoadObject roadObject : copyRO) {
+		for (RoadObject roadObject : ros) {
 			if (roadObject instanceof Car) {
 				Car actualCar = (Car) roadObject;
 				actualCar.drive(getSight(actualCar));
@@ -158,6 +155,51 @@ public class HighWay {
 			}
 		}
 		deleteObjects(deletables);
+	}
+
+	public String getType(int i){
+		String type = null;
+		for (RoadObject roadObject : roadObjects) {
+			if (i == (roadObject.id)) {
+				if (roadObject instanceof Car) {
+					type = "Car";
+				} else if (roadObject instanceof Block) {
+					type = "Block";
+				}
+			}
+		}
+		return type;
+	}
+	public String getStatus(int i) {
+		String status = null;
+		for (RoadObject roadObject : roadObjects) {
+			if (i == (roadObject.id)) {
+				if (roadObject instanceof Car) {
+					Car actualCar = (Car) roadObject;
+					status = actualCar.driver.s.toString();
+				} else if (roadObject instanceof Block) {
+					Block actualBlock = (Block) roadObject;
+					status = Float.toString(actualBlock.duration);
+				}
+				break;
+			}
+		}
+		return status;
+	}
+	public String getSpeed(int i){
+		String speed = null;
+		for (RoadObject roadObject : roadObjects) {
+			if (i == (roadObject.id)) {
+				if (roadObject instanceof Car) {
+					Car actualCar = (Car) roadObject;
+					speed = Float.toString(actualCar.actualSpeed);
+				}else{
+					System.out.println("Blocks don't have speed!");
+				}
+				break;
+			}
+		}
+		return speed;
 	}
 
 }

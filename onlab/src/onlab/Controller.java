@@ -1,22 +1,13 @@
 package onlab;
 
 import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import javax.swing.BoxLayout;
 
 public class Controller{
 
@@ -24,6 +15,12 @@ public class Controller{
 		Controller c = new Controller();
 		while(true){			
 			c.trafficLoop();
+			try {
+				Thread.sleep(0, 1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -36,7 +33,7 @@ public class Controller{
 	Status s = Status.RUNNING;
 
 	Controller(){
-		this.hw = new HighWay(1000);
+		this.hw = new HighWay(12960000);
 		this.w = new Window(this);
 		w.setVisible(true);
 		deltaTime = 0;
@@ -50,6 +47,21 @@ public class Controller{
 		if(deltaTime>=tickTime){
 			if(s == Status.RUNNING){
 				hw.move();
+				w.setLog();
+				if(hw.roadObjects != null){
+					String[] names = new String[RoadObject.count];
+					Float[] datas = new Float[RoadObject.count];
+					Color[] colors = new Color[RoadObject.count];
+					for (int i = 0; i < hw.roadObjects.size(); i++) {
+						if(hw.roadObjects.get(i) instanceof Car){
+							Car c = (Car) hw.roadObjects.get(i);
+							names[c.id-1] = "Car " + c.id;
+							datas[c.id-1] = c.actualSpeed;
+							colors[c.id-1] = c.color;
+						}
+					}
+					w.newChartData(names, datas, colors);
+				}
 			}
 			w.setRoadObjects(hw.getRoadObjects());
 			w.reFresh();
@@ -58,7 +70,10 @@ public class Controller{
 	}
 
 	private float getTime() {
-		return (float)(System.nanoTime() / 1000000);
+		long time = System.nanoTime() / 1000000;
+		float time2 = time % 1000000;
+		//return (float)(System.nanoTime() / 1000000);
+		return time2;
 	}
 
 	private float getDelta() {
@@ -94,6 +109,7 @@ public class Controller{
 					sb.append("actualSpeed: ").append(Float.toString(c.actualSpeed)).append(System.lineSeparator());
 					sb.append("prefSpeed: ").append(Float.toString(c.driver.prefSpeed)).append(System.lineSeparator());
 					sb.append("rangeOfView: ").append(Float.toString(c.driver.rangeOfView)).append(System.lineSeparator());
+					sb.append("safetyGap: ").append(Float.toString(c.driver.safetyGap)).append(System.lineSeparator());
 				}
 				if(roadObject instanceof Block){
 					Block b = (Block)roadObject;
@@ -125,6 +141,9 @@ public class Controller{
 		
 	}
 	public void LoadGame(File file){
+		w.chartFrame.removeAll();
+		w.chartFrame.setVisible(false);
+		w.setCharts();
 		BufferedReader br = null;
 		String everything = null;
 		try {
@@ -206,11 +225,16 @@ public class Controller{
 					case "prefSpeed:":
 						c.driver.prefSpeed = Float.parseFloat(name[1]);
 						break;
-	
+						
 					case "rangeOfView:":
 						c.driver.rangeOfView = Float.parseFloat(name[1]);
+						break;
+						
+					case "safetyGap:":
+						c.driver.safetyGap = Float.parseFloat(name[1]);
 						hw.roadObjects.add(c);
 						break;
+						
 	
 					case "duration:":
 						b.duration =  Float.parseFloat(name[1]);
