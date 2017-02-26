@@ -6,4 +6,5 @@ public class RoadObject {
 	static int count = 0;
 	int id;
 	Point2D.Float position = new Point2D.Float();
+	int lane = 1;
 }

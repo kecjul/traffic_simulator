@@ -605,19 +605,15 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		Point2D.Float newPoint = new Point2D.Float();
 		newPoint.x = e.getX();
 		newPoint.y = e.getY();
-		selected = surface.getObject(reConvertCoords(newPoint));
-		if(selected == null && typeChooser.getSelectedItem().equals("Car")){
-			if(!"".equals(tcarMaxSpeed.getText()) && !"".equals(tcarMaxAcc.getText()) && 
-					!"".equals(tdriverPrefSpeed.getText()) && !"".equals(tdriverRange.getText()) && !"".equals(tdriverSafety.getText())){
-				c.hw.addCar(reConvertCoords(newPoint), Float.parseFloat(tcarMaxSpeed.getText()), Float.parseFloat(tcarMaxAcc.getText()), colorsC[colorChooser.getSelectedIndex()], 
-						Float.parseFloat(tdriverPrefSpeed.getText()), Float.parseFloat(tdriverRange.getText()), Float.parseFloat(tdriverSafety.getText()));	
-			}
-		}else if (selected == null){
+		selected = surface.getObject(newPoint);
+		if(selected == null && typeChooser.getSelectedItem().equals(BLOCKPANEL)){
 			if(!"".equals(tblockDuration.getText())){
-				c.hw.addBlock(reConvertCoords(newPoint), Float.parseFloat(tblockDuration.getText()));
+				int lane = surface.getLane(newPoint);
+				Point2D.Float roadPoint = surface.getRoadPoint(newPoint, lane);
+				c.hw.addBlock(roadPoint, lane, Float.parseFloat(tblockDuration.getText()));
 			}
 		}
-		selected = surface.getObject(reConvertCoords(newPoint));
+		selected = surface.getObject(newPoint);
 		setSelected();
 	}
 

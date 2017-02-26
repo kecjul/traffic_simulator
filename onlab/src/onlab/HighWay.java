@@ -31,8 +31,8 @@ public class HighWay {
 		roadObjects.add(newCar);
 	}
 
-	void addBlock(Point2D.Float click, float duration) {
-		Block newBlock = new Block(getPos(getAngle(click)), duration);
+	void addBlock(Point2D.Float click, int lane, float duration) {
+		Block newBlock = new Block(click, lane, duration);
 		roadObjects.add(newBlock);
 	}
 

@@ -18,10 +18,11 @@ public class Block extends RoadObject{
 		currentTime = System.nanoTime() / 1000000000;
 	}
 	
-	public Block(Float startPosition, float duration) {
+	public Block(Float startPosition, int lane, float duration) {
 		count++;
 		id = count;	
 		this.position = startPosition;
+		this.lane = lane;
 		currentTime = System.nanoTime() / 1000000000;
 		this.duration = duration;
 	}
