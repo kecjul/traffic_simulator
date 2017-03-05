@@ -59,11 +59,10 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	int screenHeight = screenSize.height;
 		
 	public Window(Controller c) {
-		initUI();
 		this.c = c;
 	}
 
-	private void initUI() {
+	public Road initUI() {
 		Dimension surfaceMinimumSize = new Dimension(screenWidth - 280, screenHeight - 150);
 		Dimension settingsMinimumSize = new Dimension(280, screenHeight);
 		Dimension logMinimumSize = new Dimension(280, screenHeight);
@@ -115,6 +114,10 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setResizable(false);
+		
+		return new Road(surface.ovalBorder, surface.firstBorder, 
+				surface.firstOvalPartSize, surface.firstRectPartSize, 
+				surface.laneSize, surface.getStartPosition());
 	}
 	
 	private void setSelectPanel() {
@@ -463,6 +466,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	public void setRoadObjects(ArrayList<RoadObject> ro){
 		surface.setRoadObjects(ro);
 	}
+	
 	public void reFresh(){
 		surface.reFresh();
 		
@@ -481,8 +485,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	        if("".equals(lenght))
 	        	lenght = new String("1500");
 			c.hw.setLenght(Float.parseFloat(lenght));
-			if(!Float.toString(c.hw.lenght).equals(thwLenght.getText()))
-				thwLenght.setText(Float.toString(c.hw.lenght));
+			if(!Float.toString(c.hw.getLenght()).equals(thwLenght.getText()))
+				thwLenght.setText(Float.toString(c.hw.getLenght()));
 		}
 		if(e.getSource() instanceof JButton){
 			JButton b = (JButton)e.getSource();
@@ -569,20 +573,20 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 //				select.remove(sblock);
 //				select.add(scar);
 				selectedCarObject.setText("Car " + selected.id);
-				stcarMaxSpeed.setText(Float.toString(((Car) selected).maxSpeed));
-				stcarMaxAcc.setText(Float.toString(((Car) selected).maxAcc));
+				stcarMaxSpeed.setText(Float.toString(((Car) selected).getMaxSpeed()));
+				stcarMaxAcc.setText(Float.toString(((Car) selected).getMaxAcc()));
 				for (int i = 0; i < colorsC.length; i++){
-					if(colorsC[i].getRed() == ((Car) selected).color.getRed() &&
-						colorsC[i].getGreen() == ((Car) selected).color.getGreen() &&
-						colorsC[i].getBlue()== ((Car) selected).color.getBlue())
+					if(colorsC[i].getRed() == ((Car) selected).getColor().getRed() &&
+						colorsC[i].getGreen() == ((Car) selected).getColor().getGreen() &&
+						colorsC[i].getBlue()== ((Car) selected).getColor().getBlue())
 					{
 						scolorChooser.setSelectedIndex(i);
 						break;
 					}
 				}
-				stdriverPrefSpeed.setText(Float.toString(((Car) selected).driver.prefSpeed));
-				stdriverRange.setText(Float.toString(((Car) selected).driver.rangeOfView));
-				stdriverSafety.setText(Float.toString(((Car) selected).driver.safetyGap));
+				stdriverPrefSpeed.setText(Float.toString(((Car) selected).getDriver().getPrefSpeed()));
+				stdriverRange.setText(Float.toString(((Car) selected).getDriver().getRangeOfView()));
+				stdriverSafety.setText(Float.toString(((Car) selected).getDriver().getSafetyGap()));
 			}
 			else if(selected instanceof Block){
 				selectSplit.setBottomComponent(sblock);
@@ -608,7 +612,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		selected = surface.getObject(newPoint);
 		if(selected == null && typeChooser.getSelectedItem().equals(BLOCKPANEL)){
 			if(!"".equals(tblockDuration.getText())){
-				int lane = surface.getLane(newPoint);
+				int lane = surface.getNewObjectsLane(newPoint);
 				Point2D.Float roadPoint = surface.getRoadPoint(newPoint, lane);
 				c.hw.addBlock(roadPoint, lane, Float.parseFloat(tblockDuration.getText()));
 			}
@@ -640,4 +644,5 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		// TODO Auto-generated method stub
 		
 	}
+
 }

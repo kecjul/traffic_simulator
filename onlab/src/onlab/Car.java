@@ -6,61 +6,122 @@ import java.util.LinkedList;
 import onlab.Driver.Status;
 
 public class Car extends RoadObject{
-	float maxSpeed = 50;
-	float maxAcc = 2;
-	Color color = Color.GREEN;
-	float actualSpeed;
-	Driver driver;
-	LinkedList<RoadObject> sights = new LinkedList<RoadObject>();
-	LinkedList<Float> times = new LinkedList<Float>();
+	private float maxSpeed = 50;
+	private float maxAcc = 2;
+	private Color color = Color.GREEN;
+	private float actualSpeed;
+	private Driver driver;
+	private LinkedList<RoadObject> sights = new LinkedList<RoadObject>();
+	private LinkedList<Float> times = new LinkedList<Float>();
 	
-	Car(){driver = new Driver();}
+	Car(){setDriver(new Driver());}
 	
 	Car(Point2D.Float startPosition){
-		this.position = startPosition;
-		driver = new Driver();
+		setPosition(startPosition);
+		setDriver(new Driver());
 		count++;
 		id = count;
-		actualSpeed = 0;
+		setActualSpeed(100);
 	}
 	
 	Car(Point2D.Float startPosition, float maxSpeed, float maxAcc, Color color, float prefSpeed, float range, float safety){
 		count++;
 		this.id = count;
-		this.position = startPosition;
-		this.maxSpeed = maxSpeed;
-		this.maxAcc = maxAcc;
-		this.color = color;
-		this.actualSpeed = 0;
-		this.driver = new Driver(prefSpeed, range, safety);
+		this.setPosition(startPosition);
+		this.setMaxSpeed(maxSpeed);
+		this.setMaxAcc(maxAcc);
+		this.setColor(color);
+		this.setActualSpeed(0);
+		this.setDriver(new Driver(prefSpeed, range, safety));
 	}
 	
-	void drive(RoadObject inSight) {
+	public void drive(RoadObject inSight) {
 		float acc = 0;
-		sights.add(inSight);
-		times.add((float) System.nanoTime());
-		if ((times.peekLast() - times.peekFirst()) > (driver.reactionTime * 1000000000)) {
-			times.pop();
-			acc = driver.drive(sights.pop(), this);
+		getSights().add(inSight);
+		getTimes().add((float) System.nanoTime());
+		if ((getTimes().peekLast() - getTimes().peekFirst()) > (getDriver().getReactionTime() * 1000000000)) {
+			getTimes().pop();
+			acc = getDriver().drive(getSights().pop(), this);
 		}
 		// 1 because this get called 100 times a sec
-		if (acc > 1/maxAcc) {
-			acc = 1/maxAcc;
+		if (acc > 1/getMaxAcc()) {
+			acc = 1/getMaxAcc();
 		}
 		
-		actualSpeed += acc;
+		setActualSpeed(getActualSpeed() + acc);
 		
-		if (actualSpeed <= 0.0001){
-			actualSpeed = 0;
-			driver.s = Status.STOPPED;
+		if (getActualSpeed() <= 0.0001){
+			setActualSpeed(0);
+			getDriver().s = Status.STOPPED;
 		}
-		if (actualSpeed > maxSpeed){
-			actualSpeed = maxSpeed;
-			driver.s = Status.DRIVING;
-		}
+		if (getActualSpeed() > getMaxSpeed()){
+			setActualSpeed(getMaxSpeed());
+			getDriver().s = Status.DRIVING;
+		}		
+	}
+
+	public float getAdvance(float timeSpeed){
+		double tenMsInHour =  10d/1000/60/60 * timeSpeed;
+		return (float) (getActualSpeed() * tenMsInHour);
 	}
 
 	float getRange(){
-		return driver.rangeOfView;
+		return getDriver().getRangeOfView();
+	}
+
+	public float getMaxSpeed() {
+		return maxSpeed;
+	}
+
+	public void setMaxSpeed(float maxSpeed) {
+		this.maxSpeed = maxSpeed;
+	}
+
+	public float getMaxAcc() {
+		return maxAcc;
+	}
+
+	public void setMaxAcc(float maxAcc) {
+		this.maxAcc = maxAcc;
+	}
+
+	public Color getColor() {
+		return color;
+	}
+
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	public float getActualSpeed() {
+		return actualSpeed;
+	}
+
+	public void setActualSpeed(float actualSpeed) {
+		this.actualSpeed = actualSpeed;
+	}
+
+	public Driver getDriver() {
+		return driver;
+	}
+
+	public void setDriver(Driver driver) {
+		this.driver = driver;
+	}
+
+	public LinkedList<RoadObject> getSights() {
+		return sights;
+	}
+
+	public void setSights(LinkedList<RoadObject> sights) {
+		this.sights = sights;
+	}
+
+	public LinkedList<Float> getTimes() {
+		return times;
+	}
+
+	public void setTimes(LinkedList<Float> times) {
+		this.times = times;
 	}
 }

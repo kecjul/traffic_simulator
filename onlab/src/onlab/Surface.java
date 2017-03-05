@@ -43,7 +43,7 @@ public class Surface extends JPanel{
 	int maxHeight = screenHeight - 200;
 	
 	int firstBorder = 25;
-	int lane = 25;
+	int laneSize = 25;
 	int ovalBorder = (maxHeight - firstBorder*2)/2;
 	
 	int firstOvalPartSize = maxHeight - firstBorder*2;
@@ -57,14 +57,14 @@ public class Surface extends JPanel{
 		Graphics2D g2d = (Graphics2D) g;
 		
 		for (RoadObject roadObject : roadObjects) {
-			Point2D.Float pos = roadObject.position;
+			Point2D.Float pos = roadObject.getPosition();
     		FontMetrics fm = g.getFontMetrics();
             double textWidth = fm.getStringBounds(Integer.toString(roadObject.id), g).getWidth();
 			if(roadObject instanceof Car){
-				g2d.setColor(((Car) roadObject).color); 
+				g2d.setColor(((Car) roadObject).getColor()); 
         		g2d.fillOval((int)pos.getX() - carSize/2, (int)pos.getY() - carSize/2, carSize, carSize);
         		
-        		if(((Car) roadObject).color == Color.BLUE)
+        		if(((Car) roadObject).getColor() == Color.BLUE)
 					g2d.setColor(new Color(255, 255, 255)); 
         		else
 					g2d.setColor(new Color(0, 0, 0)); 
@@ -108,20 +108,20 @@ public class Surface extends JPanel{
 		g2d.fillRect(firstOvalPartSize/2+firstBorder, firstBorder, firstRectPartSize, firstOvalPartSize);
 		if(getLaneCount() == 1){
 			g2d.setColor(Color.BLACK);
-			g2d.fillOval(firstBorder+lane-1, firstBorder+lane-1, firstOvalPartSize-lane*2+2, firstOvalPartSize-lane*2+2);	
+			g2d.fillOval(firstBorder+laneSize-1, firstBorder+laneSize-1, firstOvalPartSize-laneSize*2+2, firstOvalPartSize-laneSize*2+2);	
 			
 			g2d.setColor(grass);
-			g2d.fillOval(firstBorder+lane, firstBorder+lane, firstOvalPartSize-lane*2, firstOvalPartSize-lane*2);
+			g2d.fillOval(firstBorder+laneSize, firstBorder+laneSize, firstOvalPartSize-laneSize*2, firstOvalPartSize-laneSize*2);
 			
 			g2d.setColor(Color.BLACK);
-			g2d.fillRect(firstOvalPartSize/2+firstBorder, firstBorder+lane-1, firstRectPartSize, firstOvalPartSize-lane*2+2);	
+			g2d.fillRect(firstOvalPartSize/2+firstBorder, firstBorder+laneSize-1, firstRectPartSize, firstOvalPartSize-laneSize*2+2);	
 
 			g2d.setColor(grass);
-			g2d.fillRect(firstOvalPartSize/2+firstBorder, firstBorder+lane, firstRectPartSize, firstOvalPartSize-lane*2);
+			g2d.fillRect(firstOvalPartSize/2+firstBorder, firstBorder+laneSize, firstRectPartSize, firstOvalPartSize-laneSize*2);
 		} else {
 			for (int i = 1; i < getLaneCount(); i++) {
-				int border = firstBorder + i*lane;
-				int ovalPartSize = firstOvalPartSize - i*(lane*2);
+				int border = firstBorder + i*laneSize;
+				int ovalPartSize = firstOvalPartSize - i*(laneSize*2);
 				int rectPartSize = firstRectPartSize;
 	
 				g2dDashed.setColor(Color.WHITE);
@@ -133,10 +133,10 @@ public class Surface extends JPanel{
 				
 				if(i == getLaneCount()-1){
 					g2d.setColor(Color.BLACK);
-					g2d.fillOval(border+lane-1, border+lane-1, ovalPartSize-lane*2+2, ovalPartSize-lane*2+2);
+					g2d.fillOval(border+laneSize-1, border+laneSize-1, ovalPartSize-laneSize*2+2, ovalPartSize-laneSize*2+2);
 					
 					g2d.setColor(grass);
-					g2d.fillOval(border+lane, border+lane, ovalPartSize-lane*2, ovalPartSize-lane*2);					
+					g2d.fillOval(border+laneSize, border+laneSize, ovalPartSize-laneSize*2, ovalPartSize-laneSize*2);					
 				}
 	
 				g2dDashed.setColor(Color.WHITE);
@@ -146,10 +146,10 @@ public class Surface extends JPanel{
 				g2d.fillRect(ovalPartSize/2+border, border, rectPartSize, ovalPartSize);
 				if(i == getLaneCount()-1){
 					g2d.setColor(Color.BLACK);
-					g2d.fillRect(ovalPartSize/2+border, border+lane-1, rectPartSize, ovalPartSize-lane*2+2);	
+					g2d.fillRect(ovalPartSize/2+border, border+laneSize-1, rectPartSize, ovalPartSize-laneSize*2+2);	
 
 					g2d.setColor(grass);
-					g2d.fillRect(ovalPartSize/2+border, border+lane, rectPartSize, ovalPartSize-lane*2);
+					g2d.fillRect(ovalPartSize/2+border, border+laneSize, rectPartSize, ovalPartSize-laneSize*2);
 				}
 			}
 		}
@@ -164,37 +164,48 @@ public class Surface extends JPanel{
 		return new Point2D.Float(position.x + (size/2), size - (position.y + (size/2)));
 	}
 	
-	public int getLane(Point2D.Float newPoint) {
+	public int getNewObjectsLane(Point2D.Float newPoint) {
 		int actLane = 0;
-		double x = newPoint.getX();
-		double y = newPoint.getY();
+		float x = newPoint.x;
 		if( x < ovalBorder){
-			//TODO
-			int i = getLaneCount();
-			while(actLane == 0){
-				if(isInsideCircle(newPoint, i-1)){
-					actLane = i;
-				}
-				if( i > 1){
-					i--;
-				} else {
-					actLane = 1;
-				}
-			}
+			actLane = ovalLane(newPoint);
 		} else {
-			int i = 0;
-			while(actLane == 0){
-				if( y < firstBorder + (i+1) * lane || y > firstOvalPartSize + firstBorder - (i+1) * lane){
-					actLane = i+1;
-				} 
-				if( i < getLaneCount()-1){
-					i++;
-				} else {
-					actLane = getLaneCount();
-				}
-			}
+			actLane = rectLane(newPoint);				
 		}
 		return actLane;						
+	}
+	
+	private int ovalLane(Point2D.Float newPoint){
+		int actLane = 0; 
+		int i = getLaneCount();
+		while(actLane == 0){
+			if(isInsideCircle(newPoint, i-1)){
+				actLane = i;
+			}
+			if( i > 1){
+				i--;
+			} else {
+				actLane = 1;
+			}
+		}
+		return actLane;
+	}
+	
+	private int rectLane(Point2D.Float newPoint){
+		int actLane = 0; 
+		int i = 0;
+		float y = newPoint.y;
+		while(actLane == 0){
+			if( y < firstBorder + (i+1) * laneSize || y > firstOvalPartSize + firstBorder - (i+1) * laneSize){
+				actLane = i+1;
+			} 
+			if( i < getLaneCount()-1){
+				i++;
+			} else {
+				actLane = getLaneCount();
+			}
+		}
+		return actLane;
 	}
 	
 	public Point2D.Float getRoadPoint(Point2D.Float newPoint, int actLane) {
@@ -202,24 +213,22 @@ public class Surface extends JPanel{
 		float x = newPoint.x;
 		float y = newPoint.y;
 		if( x < ovalBorder){
-			//TODO
 			roadPoint = getCirclePoint(newPoint, actLane);
 		} else {
 			if( y < firstBorder + firstOvalPartSize/2){
-				roadPoint = new Point2D.Float(x, (firstBorder + (actLane-1)*lane + lane/2));
+				roadPoint = new Point2D.Float(x, (firstBorder + (actLane-1)*laneSize + laneSize/2));
 			} else {
-				roadPoint = new Point2D.Float(x, (firstBorder + firstOvalPartSize - (actLane-1)*lane - lane/2));
+				roadPoint = new Point2D.Float(x, (firstBorder + firstOvalPartSize - (actLane-1)*laneSize - laneSize/2));
 			}
 		}
-		
 		return roadPoint;
 	}
 
 	public RoadObject getObject(Point2D.Float newPoint){
 		for (RoadObject roadObject : roadObjects) {
-			if(roadObject instanceof Block && getDistance(newPoint, roadObject.position) < blockSize){
+			if(roadObject instanceof Block && getDistance(newPoint, roadObject.getPosition()) < blockSize){
 				return roadObject;
-			}else if(roadObject instanceof Car && getDistance(newPoint, roadObject.position) < carSize){
+			}else if(roadObject instanceof Car && getDistance(newPoint, roadObject.getPosition()) < carSize){
 				return roadObject;
 			}
 		}	
@@ -227,7 +236,7 @@ public class Surface extends JPanel{
 	}
 	
 	private Point2D.Float getCirclePoint(Float newPoint, int actLane) {
-		int r = firstOvalPartSize/2 - (actLane-1) * lane - lane/2;
+		int r = firstOvalPartSize/2 - (actLane-1) * laneSize - laneSize/2;
 		float x = centre.x + r*(newPoint.x-centre.x)/getDistance(newPoint,centre);
 		float y = centre.y + r*(newPoint.y-centre.y)/getDistance(newPoint,centre);
 		
@@ -237,7 +246,7 @@ public class Surface extends JPanel{
 		
 	private boolean isInsideCircle(Float newPoint, int i) {
 		float distance = getDistance(newPoint, centre);
-		if (distance < firstOvalPartSize/2 - i*lane){
+		if (distance < firstOvalPartSize/2 - i*laneSize){
 			return true;
 		} else {
 			return false;
@@ -260,6 +269,11 @@ public class Surface extends JPanel{
 		if(laneCount  > 0 && laneCount < 6){
 			Surface.laneCount = laneCount;
 		}
+	}
+	
+	public Point2D.Float getStartPosition() {
+		Point2D.Float point = new Point2D.Float(maxWidth, firstBorder);
+		return point;
 	}
 	
 	@Override

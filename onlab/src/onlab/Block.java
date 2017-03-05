@@ -12,7 +12,7 @@ public class Block extends RoadObject{
 	Block(){}
 	
 	Block(Point2D.Float startPosition){
-		this.position = startPosition;
+		this.setPosition(startPosition);
 		count++;
 		id = count;	
 		currentTime = System.nanoTime() / 1000000000;
@@ -21,8 +21,8 @@ public class Block extends RoadObject{
 	public Block(Float startPosition, int lane, float duration) {
 		count++;
 		id = count;	
-		this.position = startPosition;
-		this.lane = lane;
+		this.setPosition(startPosition);
+		this.setLane(lane);
 		currentTime = System.nanoTime() / 1000000000;
 		this.duration = duration;
 	}
