@@ -117,7 +117,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		
 		return new Road(surface.ovalBorder, surface.firstBorder, 
 				surface.firstOvalPartSize, surface.firstRectPartSize, 
-				surface.laneSize, surface.getStartPosition());
+				surface.laneSize, surface.getStartPosition(),
+				surface.circleCenter);
 	}
 	
 	private void setSelectPanel() {

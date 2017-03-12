@@ -9,7 +9,7 @@ public class Car extends RoadObject{
 	private float maxSpeed = 50;
 	private float maxAcc = 2;
 	private Color color = Color.GREEN;
-	private float actualSpeed;
+	private float currentSpeed;
 	private Driver driver;
 	private LinkedList<RoadObject> sights = new LinkedList<RoadObject>();
 	private LinkedList<Float> times = new LinkedList<Float>();
@@ -21,7 +21,7 @@ public class Car extends RoadObject{
 		setDriver(new Driver());
 		count++;
 		id = count;
-		setActualSpeed(100);
+		setCurrentSpeed(100);
 	}
 	
 	Car(Point2D.Float startPosition, float maxSpeed, float maxAcc, Color color, float prefSpeed, float range, float safety){
@@ -31,38 +31,42 @@ public class Car extends RoadObject{
 		this.setMaxSpeed(maxSpeed);
 		this.setMaxAcc(maxAcc);
 		this.setColor(color);
-		this.setActualSpeed(0);
+		this.setCurrentSpeed(0);
 		this.setDriver(new Driver(prefSpeed, range, safety));
 	}
 	
 	public void drive(RoadObject inSight) {
 		float acc = 0;
-		getSights().add(inSight);
-		getTimes().add((float) System.nanoTime());
-		if ((getTimes().peekLast() - getTimes().peekFirst()) > (getDriver().getReactionTime() * 1000000000)) {
+		addSights(inSight);
+		addTimes((float) System.nanoTime());
+		if ((getTimes().peekLast() - getTimes().peekFirst()) > secToNano(getDriver().getReactionTime())) {
 			getTimes().pop();
 			acc = getDriver().drive(getSights().pop(), this);
 		}
-		// 1 because this get called 100 times a sec
+		// (100/getMaxAcc) ->km/h/s, (100/getMaxAcc)/100 ->km/h/tick  
 		if (acc > 1/getMaxAcc()) {
 			acc = 1/getMaxAcc();
 		}
 		
-		setActualSpeed(getActualSpeed() + acc);
+		setCurrentSpeed(getCurrentSpeed() + acc);
 		
-		if (getActualSpeed() <= 0.0001){
-			setActualSpeed(0);
+		if (getCurrentSpeed() <= 0.0001){
+			setCurrentSpeed(0);
 			getDriver().s = Status.STOPPED;
 		}
-		if (getActualSpeed() > getMaxSpeed()){
-			setActualSpeed(getMaxSpeed());
+		if (getCurrentSpeed() > getMaxSpeed()){
+			setCurrentSpeed(getMaxSpeed());
 			getDriver().s = Status.DRIVING;
 		}		
 	}
 
 	public float getAdvance(float timeSpeed){
 		double tenMsInHour =  10d/1000/60/60 * timeSpeed;
-		return (float) (getActualSpeed() * tenMsInHour);
+		return (float) (getCurrentSpeed() * tenMsInHour);
+	}
+	
+	public float secToNano(float time){
+		return (float) time * 1000000000;
 	}
 
 	float getRange(){
@@ -93,12 +97,12 @@ public class Car extends RoadObject{
 		this.color = color;
 	}
 
-	public float getActualSpeed() {
-		return actualSpeed;
+	public float getCurrentSpeed() {
+		return currentSpeed;
 	}
 
-	public void setActualSpeed(float actualSpeed) {
-		this.actualSpeed = actualSpeed;
+	public void setCurrentSpeed(float currentSpeed) {
+		this.currentSpeed = currentSpeed;
 	}
 
 	public Driver getDriver() {
@@ -116,6 +120,10 @@ public class Car extends RoadObject{
 	public void setSights(LinkedList<RoadObject> sights) {
 		this.sights = sights;
 	}
+	
+	public void addSights(RoadObject ro) {
+		sights.add(ro);
+	}
 
 	public LinkedList<Float> getTimes() {
 		return times;
@@ -123,5 +131,9 @@ public class Car extends RoadObject{
 
 	public void setTimes(LinkedList<Float> times) {
 		this.times = times;
+	}	
+	
+	public void addTimes(Float time) {
+		times.add(time);
 	}
 }

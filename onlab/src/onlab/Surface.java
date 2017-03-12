@@ -44,13 +44,13 @@ public class Surface extends JPanel{
 	
 	int firstBorder = 25;
 	int laneSize = 25;
-	int ovalBorder = (maxHeight - firstBorder*2)/2;
 	
 	int firstOvalPartSize = maxHeight - firstBorder*2;
 	int firstRectPartSize = maxWidth - firstOvalPartSize/2-firstBorder;
 	
+	int ovalBorder = firstBorder + firstOvalPartSize/2;
 
-	Point2D.Float centre = new Float(firstBorder + firstOvalPartSize/2, firstBorder + firstOvalPartSize/2);
+	Point2D.Float circleCenter = new Float(firstBorder + firstOvalPartSize/2, firstBorder + firstOvalPartSize/2);
 	
 	private void doDrawing(Graphics g) {
 		drawLanes(g);
@@ -237,15 +237,15 @@ public class Surface extends JPanel{
 	
 	private Point2D.Float getCirclePoint(Float newPoint, int actLane) {
 		int r = firstOvalPartSize/2 - (actLane-1) * laneSize - laneSize/2;
-		float x = centre.x + r*(newPoint.x-centre.x)/getDistance(newPoint,centre);
-		float y = centre.y + r*(newPoint.y-centre.y)/getDistance(newPoint,centre);
+		float x = circleCenter.x + r*(newPoint.x-circleCenter.x)/getDistance(newPoint,circleCenter);
+		float y = circleCenter.y + r*(newPoint.y-circleCenter.y)/getDistance(newPoint,circleCenter);
 		
 		Point2D.Float circlePoint = new Float(x, y);		
 		return circlePoint;
 	}
 		
 	private boolean isInsideCircle(Float newPoint, int i) {
-		float distance = getDistance(newPoint, centre);
+		float distance = getDistance(newPoint, circleCenter);
 		if (distance < firstOvalPartSize/2 - i*laneSize){
 			return true;
 		} else {

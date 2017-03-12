@@ -18,7 +18,6 @@ public class Controller{
 			try {
 				Thread.sleep(0, 1000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -67,7 +66,7 @@ public class Controller{
 						if(hw.getRoadObjects().get(i) instanceof Car){
 							Car c = (Car) hw.getRoadObjects().get(i);
 							names[c.id-1] = "Car " + c.id;
-							datas[c.id-1] = c.getActualSpeed();
+							datas[c.id-1] = c.getCurrentSpeed();
 							colors[c.id-1] = c.getColor();
 						}
 					}
@@ -117,7 +116,7 @@ public class Controller{
 					sb.append("color: ").append(Integer.toString(c.getColor().getRed())).append(" ")
 										.append(Integer.toString(c.getColor().getGreen())).append(" ")
 										.append(Integer.toString(c.getColor().getBlue())).append(" ").append(System.lineSeparator());
-					sb.append("actualSpeed: ").append(Float.toString(c.getActualSpeed())).append(System.lineSeparator());
+					sb.append("actualSpeed: ").append(Float.toString(c.getCurrentSpeed())).append(System.lineSeparator());
 					sb.append("prefSpeed: ").append(Float.toString(c.getDriver().getPrefSpeed())).append(System.lineSeparator());
 					sb.append("rangeOfView: ").append(Float.toString(c.getDriver().getRangeOfView())).append(System.lineSeparator());
 					sb.append("safetyGap: ").append(Float.toString(c.getDriver().getSafetyGap())).append(System.lineSeparator());
@@ -230,7 +229,7 @@ public class Controller{
 						break;
 	
 					case "actualSpeed:":
-						c.setActualSpeed(Float.parseFloat(name[1]));
+						c.setCurrentSpeed(Float.parseFloat(name[1]));
 						break;
 	
 					case "prefSpeed:":

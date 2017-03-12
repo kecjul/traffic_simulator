@@ -63,18 +63,20 @@ public class Driver {
 	public float drive(RoadObject inSight, Car thisCar) {
 		float change = 0;
 		if (inSight == null) {
-			change = normalDrive(thisCar.getActualSpeed(), thisCar.getMaxAcc());
+			change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
 		} else {
 			change = reactiveDrive(inSight, thisCar);
 		}
-		if (change > 0)
-			s = Status.ACCELERATING;
-		if (change < 0)
-			s = Status.DECELERATING;
-		if (change == 0 || Math.abs(change) < 0.001 )
-			s = Status.DRIVING;
-		if (inSight != null && inSight instanceof Block)
+		
+		if (inSight != null && inSight instanceof Block) {
 			s = Status.STOPPING;
+		} else if (change == 0 || Math.abs(change) < 0.001 ) {
+			s = Status.DRIVING;
+		} else if (change > 0) {
+			s = Status.ACCELERATING;
+		} else if (change < 0) {
+			s = Status.DECELERATING;
+		}
 		return change;
 	}
 
@@ -83,10 +85,9 @@ public class Driver {
 		float breakDistance = getDistance(inSight.getPosition(), thisCar.getPosition()) - getSafetyGap();
 
 		if (breakDistance <= 0) {
-			change = closeDrive(inSight, thisCar.getActualSpeed(), breakDistance);
-			
+			change = closeDrive(inSight, thisCar.getCurrentSpeed(), breakDistance);			
 		} else {
-			change = farDrive(inSight, thisCar.getActualSpeed(), breakDistance);
+			change = farDrive(inSight, thisCar.getCurrentSpeed(), breakDistance);
 		}
 		return change;
 	}
@@ -99,40 +100,40 @@ public class Driver {
 		}
 		if (inSight instanceof Car) {
 			Car car = (Car) inSight;
-			if (getPrefSpeed() >= car.getActualSpeed()) {
-				change = (car.getActualSpeed() - actualSpeed) / breakDistance;
-			} else if (car.getActualSpeed() > getPrefSpeed()) {
+			if (getPrefSpeed() >= car.getCurrentSpeed()) {
+				change = (car.getCurrentSpeed() - actualSpeed) / breakDistance;
+			} else if (car.getCurrentSpeed() > getPrefSpeed()) {
 				change = (getPrefSpeed() - actualSpeed);
 			}
-			if(Math.abs(car.getActualSpeed() - actualSpeed) <0.1){
-				actualSpeed = car.getActualSpeed();
+			if(Math.abs(car.getCurrentSpeed() - actualSpeed) <0.1){
+				actualSpeed = car.getCurrentSpeed();
 				change = 0;
 			}
 		}
 		return change;
 	}
 
-	private float closeDrive(RoadObject inSight, float actualSpeed, float breakDistance) {
+	private float closeDrive(RoadObject inSight, float currentSpeed, float breakDistance) {
 		float change = 0;
 		if (inSight instanceof Block) {
-			change = actualSpeed * (-1);
+			change = currentSpeed * (-1);
 		}
 		if (inSight instanceof Car) {
 			Car car = (Car) inSight;
-			if (actualSpeed > car.getActualSpeed()) {
-				change = (car.getActualSpeed() - actualSpeed) + breakDistance;
-			} else if (car.getActualSpeed() > actualSpeed) {
-				change = (getPrefSpeed() - actualSpeed) + breakDistance;
+			if (currentSpeed > car.getCurrentSpeed()) {
+				change = (car.getCurrentSpeed() - currentSpeed) + breakDistance;
+			} else if (car.getCurrentSpeed() > currentSpeed) {
+				change = (getPrefSpeed() - currentSpeed) + breakDistance;
 			}
 		}
 		return change;
 	}
 
-	private float normalDrive(float actualSpeed, float maxAcc) {
+	private float normalDrive(float currentSpeed, float maxAcc) {
 		float change = 0;
-		change = (getPrefSpeed() - actualSpeed);
-		if ((change * -1) > maxAcc)
-			change = maxAcc * -1;
+		change = (getPrefSpeed() - currentSpeed);
+		if ((change * -1) > 1/maxAcc)
+			change = 1/maxAcc * -1;
 		return change;
 	}
 
