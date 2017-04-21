@@ -25,6 +25,10 @@ import org.jfree.data.time.TimeSeriesCollection;
 import onlab.Controller.Status;
 
 public class Window extends JFrame implements ActionListener, MouseListener {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	Controller c;
 	Surface surface;
 	JFrame chartFrame;

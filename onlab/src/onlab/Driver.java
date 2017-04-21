@@ -1,13 +1,9 @@
 package onlab;
 
-import java.awt.geom.Point2D;
-
-import onlab.Controller.Status;
-
 public class Driver {
 	private float prefSpeed = 50;
 	private float rangeOfView = 50;
-	private float safetyGap;
+	private float safetyGap = 20;
 	private float reactionTime = (float) 0.02;
 
 	enum Status {
@@ -41,10 +37,28 @@ public class Driver {
 				return "driving";
 			}
 		},
-		OVERTAKING {
+		MIGHTCHANGELEFT {
 			@Override
 			public String toString() {
-				return "overtaking";
+				return "mightchangeleft";
+			}
+		},
+		CHANGELEFT {
+			@Override
+			public String toString() {
+				return "changeleft";
+			}
+		},
+		MIGHTCHANGERIGHT {
+			@Override
+			public String toString() {
+				return "mightchangeright";
+			}
+		},
+		CHANGERIGHT {
+			@Override
+			public String toString() {
+				return "changeright";
 			}
 		}
 	};
@@ -62,30 +76,55 @@ public class Driver {
 
 	public float drive(RoadObject inSight, Car thisCar) {
 		float change = 0;
-		if (inSight == null) {
+		
+		if(inSight != null && inSight.getLane() != thisCar.getLane()){
+			inSight = null;
+		} 
+		
+		if(s == Status.CHANGELEFT || s == Status.CHANGERIGHT ){
 			change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
 		} else {
-			change = reactiveDrive(inSight, thisCar);
-		}
-		
-		if (inSight != null && inSight instanceof Block) {
-			s = Status.STOPPING;
-		} else if (change == 0 || Math.abs(change) < 0.001 ) {
-			s = Status.DRIVING;
-		} else if (change > 0) {
-			s = Status.ACCELERATING;
-		} else if (change < 0) {
-			s = Status.DECELERATING;
+			if (inSight == null) {
+				change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
+			} else {
+				change = reactiveDrive(inSight, thisCar);
+			}
+			if(inSight != null && isOvertaking(inSight, thisCar)){
+				s = Status.MIGHTCHANGELEFT;
+			} else if (inSight != null && inSight instanceof Block) {
+				s = Status.STOPPING;
+			} else if (change == 0 || Math.abs(change) < 0.001 ) {
+				s = Status.DRIVING;
+			} else if (change > 0) {
+				s = Status.ACCELERATING;
+			} else if (change < 0) {
+				s = Status.DECELERATING;
+			}
 		}
 		return change;
 	}
 
+	private boolean isOvertaking(RoadObject inSight, Car thisCar) {
+		float breakDistance = Util.getDistance(inSight.getPosition(), thisCar.getPosition()) - getSafetyGap();
+		if (breakDistance <= 10) {
+			if(inSight instanceof Block) {
+				return true;
+			} else {
+				Car car = (Car) inSight;
+				if(car.getDriver().getStatus() == Status.DRIVING && car.getCurrentSpeed() < getPrefSpeed()){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	private float reactiveDrive(RoadObject inSight, Car thisCar) {
 		float change = 0;
-		float breakDistance = getDistance(inSight.getPosition(), thisCar.getPosition()) - getSafetyGap();
-
+		float breakDistance = Util.getDistance(inSight.getPosition(), thisCar.getPosition()) - getSafetyGap();
+		
 		if (breakDistance <= 0) {
-			change = closeDrive(inSight, thisCar.getCurrentSpeed(), breakDistance);			
+			change = closeDrive(inSight, thisCar.getCurrentSpeed(), breakDistance);				
 		} else {
 			change = farDrive(inSight, thisCar.getCurrentSpeed(), breakDistance);
 		}
@@ -126,6 +165,7 @@ public class Driver {
 				change = (getPrefSpeed() - currentSpeed) + breakDistance;
 			}
 		}
+		
 		return change;
 	}
 
@@ -135,14 +175,6 @@ public class Driver {
 		if ((change * -1) > 1/maxAcc)
 			change = 1/maxAcc * -1;
 		return change;
-	}
-
-	public float getDistance(Point2D.Float a, Point2D.Float b) {
-		return (float) Math.sqrt(square(b.x - a.x) + square(b.y - a.y));
-	}
-
-	public float square(float number) {
-		return (number * number);
 	}
 
 	public float getPrefSpeed() {
@@ -175,5 +207,16 @@ public class Driver {
 
 	public void setReactionTime(float reactionTime) {
 		this.reactionTime = reactionTime;
+	}
+	
+	public Status getStatus() {
+		return s;
+	}		
+	public void setStatus(Status s) {
+		this.s = s ;
+	}	
+
+	public void setReactionTime(Status s) {
+		this.s = s;
 	}
 }

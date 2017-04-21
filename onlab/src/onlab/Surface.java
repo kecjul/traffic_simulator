@@ -16,16 +16,14 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Point2D.Float;
 import java.util.ArrayList;
 
-
-
-import java.util.HashMap;
-import java.util.Set;
-
 import javax.swing.JPanel;
 
-import javafx.scene.shape.Ellipse;
 
 public class Surface extends JPanel{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
 	private static int laneCount = 2;
 	

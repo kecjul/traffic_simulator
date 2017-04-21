@@ -37,7 +37,7 @@ public class Controller{
 	Controller(){
 		this.w = new Window(this);
 		Road road = w.initUI();
-		this.hw = new HighWay(road);
+		this.hw = new HighWay(road, 50);
 		w.setVisible(true);
 		deltaTime = 0;
 		prevTime = 0;
@@ -70,7 +70,7 @@ public class Controller{
 							colors[c.id-1] = c.getColor();
 						}
 					}
-					w.newChartData(names, datas, colors);
+//					w.newChartData(names, datas, colors);
 				}
 			}
 			w.setRoadObjects(hw.getRoadObjects());

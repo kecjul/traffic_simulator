@@ -3,7 +3,8 @@ package onlab;
 import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashMap;
+
+import onlab.Driver.Status;
 
 public class HighWay {
 	private float pixelLenght = 0;
@@ -11,13 +12,41 @@ public class HighWay {
 	private ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
 	private Road road;
 	private float timeLapse = 100;
-
+	
+	enum Direction {
+		LEFT {
+			@Override
+			public String toString() {
+				return "left";
+			}
+		},
+		RIGHT {
+			@Override
+			public String toString() {
+				return "right";
+			}
+		},
+		FORWARD {
+			@Override
+			public String toString() {
+				return "forward";
+			}
+		},
+		BACKWARD {
+			@Override
+			public String toString() {
+				return "backward";
+			}
+		}
+	}
+	
 	HighWay(float lenght) {
 		this.pixelLenght = lenght;
 	}
 
-	public HighWay(Road road) {
+	public HighWay(Road road, float tl) {
 		this.road = road;
+		setTimeLapse(tl);
 		setLenght((float) (road.getRectPartSize()*2 + road.getOvalPartSize()*Math.PI/2));
 	}
 
@@ -131,7 +160,13 @@ public class HighWay {
 	}
 
 	public void newCar() {
-		getRoadObjects().add(new Car(road.getStartPosition()));
+		if(getRoadObjects().size() <= 2){
+			getRoadObjects().add(new Car(road.getStartPosition()));
+		}
+		if(getRoadObjects().size() == 1){
+			Car c = (Car) getRoadObjects().get(0);
+			c.getDriver().setPrefSpeed(5);
+		}
 	}
 
 	/* 
@@ -145,8 +180,13 @@ public class HighWay {
 		for (RoadObject roadObject : ros) {
 			if (roadObject instanceof Car) {
 				Car thisCar = (Car) roadObject;
-				RoadObject carInSight = getSight(thisCar);
+				RoadObject carInSight = getSightForward(thisCar, thisCar.getLane());
 				thisCar.drive(carInSight);
+				if(thisCar.getDriver().getStatus() == Status.MIGHTCHANGELEFT ){
+					thisCar.change(getSightForward(thisCar, thisCar.getLane()+1),getSightBackward(thisCar, thisCar.getLane()+1));
+				} else if(thisCar.getDriver().getStatus() == Status.MIGHTCHANGERIGHT){
+					thisCar.change(getSightForward(thisCar, thisCar.getLane()-1),getSightBackward(thisCar, thisCar.getLane()-1));
+				}
 				newCarPosition(thisCar);
 			} else if (roadObject instanceof Block) {
 				Block thisBlock = (Block) roadObject;
@@ -157,26 +197,38 @@ public class HighWay {
 		}
 		deleteObjects(deletables);
 	}
-
-	private RoadObject getSight(Car asker) {
+	
+	private RoadObject getSightForward(Car asker, int lane) {
 		//TODO
 		RoadObject result = null;
 		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
-			result = getSightInOvalPart(asker);
+			result = getSightInOvalPart(asker, lane, Direction.FORWARD);
 		} else {
-			result = getSightInRectPart(asker);
+			result = getSightInRectPart(asker, lane, Direction.FORWARD);
+		}
+		return result;
+	}
+	
+
+	private RoadObject getSightBackward(Car asker, int lane) {
+		//TODO
+		RoadObject result = null;
+		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
+			result = getSightInOvalPart(asker, lane, Direction.BACKWARD);
+		} else {
+			result = getSightInRectPart(asker, lane, Direction.BACKWARD);
 		}
 		return result;
 	}
 
 	@SuppressWarnings("unchecked")
-	private RoadObject getSightInOvalPart(Car asker) {
+	private RoadObject getSightInOvalPart(Car asker, int lane, Direction dir) {
 		RoadObject result = null;
 		float minAngle = 360;
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
 		for (RoadObject roadObject : ros) {			
 			float angle = (getAngle(roadObject.getPosition(), asker.getLane()) + 360 - getAngle(asker.getPosition(), asker.getLane())) % 360;
-			if (angle < minAngle && asker != roadObject) {
+			if (angle < minAngle && asker != roadObject  && roadObject.getLane() == lane) {
 				minAngle = angle;
 				result = roadObject;
 			}
@@ -188,56 +240,120 @@ public class HighWay {
 	}
 
 	@SuppressWarnings("unchecked")
-	private RoadObject getSightInRectPart(Car asker) {
+	private RoadObject getSightInRectPart(Car asker, int lane, Direction dir) {
 		RoadObject result = null;
 		float minDistance = road.getRectPartSize();
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
 		for (RoadObject roadObject : ros) {
-			if(isROInUpperRectPart(asker) && isROInUpperRectPart(roadObject) 
-					&& isROOnLeftSide(asker, roadObject)){				
-				float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
-				if(distance < minDistance){
-					minDistance = distance;
-					result = roadObject;
-				}				
-			} else if(!isROInUpperRectPart(asker) && !isROInUpperRectPart(roadObject)
-					&& !isROOnLeftSide(asker, roadObject)){
-				float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
-				if(distance < minDistance){
-					minDistance = distance;
-					result = roadObject;
-				}
-			}					
+			if(asker != roadObject){
+				if(isROInUpperRectPart(asker) && isROInUpperRectPart(roadObject) 
+						&& isROOnLeftSide(asker, roadObject)){				
+					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
+					if(distance < minDistance && roadObject.getLane() == lane){
+						minDistance = distance;
+						result = roadObject;
+					}				
+				} else if(!isROInUpperRectPart(asker) && !isROInUpperRectPart(roadObject)
+						&& !isROOnLeftSide(asker, roadObject)){
+					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
+					if(distance < minDistance && roadObject.getLane() == lane){
+						minDistance = distance;
+						result = roadObject;
+					}
+				}	
+			}
 		} 		
 		return result;
 	}
 	
 	private void newCarPosition(Car thisCar) {
 		Point2D.Float newPosition;
+		Status status = thisCar.getDriver().getStatus();
+		if(status == Status.CHANGELEFT || status == Status.CHANGERIGHT  ){
+			System.out.println("ID " + thisCar.id);
+			if(isChangeComplete(thisCar)){
+				int lane = thisCar.getLane();
+				if(thisCar.getDriver().getStatus() == Status.CHANGELEFT ){
+					thisCar.setLane(++lane);
+				} else if(thisCar.getDriver().getStatus() == Status.CHANGERIGHT ){
+					thisCar.setLane(--lane);
+				}
+				thisCar.getDriver().setStatus(Status.DRIVING);
+			}
+		}		
 		if(thisCar.getPosition().x < road.getBorderPoint()){
-			newPosition = ovalPosition(thisCar.getPosition(), thisCar.getAdvance(timeLapse), thisCar.getLane());
+			newPosition = ovalPosition(thisCar.getPosition(), thisCar.getAdvance(timeLapse), thisCar.getLane(), status);
 		} else {
-			newPosition = rectPosition(thisCar.getPosition(), thisCar.getAdvance(timeLapse), thisCar.getLane());
-		}
+			newPosition = rectPosition(thisCar.getPosition(), thisCar.getAdvance(timeLapse), thisCar.getLane(), status);
+		}		
 		thisCar.setPosition(newPosition);
 	}
 
-	private Point2D.Float ovalPosition(Point2D.Float position, Float advance, int lane){	
-		float angle = getAngle(position, lane);
-		angle += getAngleFromAdvance(kmToPixel(advance), lane);
-		angle%=360;
-		return getPos(angle, lane);
+	private boolean isChangeComplete(Car thisCar) {
+		int lane = thisCar.getLane();
+		if(thisCar.getDriver().getStatus() == Status.CHANGELEFT ){
+			lane++;
+		} else if(thisCar.getDriver().getStatus() == Status.CHANGERIGHT ){
+			lane--;
+		}
+		if(thisCar.getPosition().x < road.getBorderPoint()){
+			if(Util.getDistance(getCirclePoint(thisCar.getPosition(), lane), thisCar.getPosition()) < kmToPixel(thisCar.getAdvance(timeLapse))){
+				return true;
+			}
+		} else {
+			System.out.println("ychange " + getYChange(kmToPixel(thisCar.getAdvance(timeLapse))));
+			System.out.println("needed " + Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)));
+			if(Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)) < getYChange(kmToPixel(thisCar.getAdvance(timeLapse)))){
+				return true;
+			}
+		}
+		return false;
 	}
 
-	private Point2D.Float rectPosition(Point2D.Float position, float advance, int lane){
-		Point2D.Float newPosition = null;
-		float pixelAdvance = kmToPixel(advance);
-		if(isPosInUpperRectPart(position)){
-			pixelAdvance = pixelAdvance * -1;
+	private Point2D.Float ovalPosition(Point2D.Float position, Float advance, int lane, Status status){	
+		float angle = getAngle(position, lane);
+		float plusAngle = getAngleFromAdvance(kmToPixel(advance), lane);
+		if(status == Status.CHANGELEFT ){
+			plusAngle = (float) (plusAngle * (kmToPixel(advance)/Math.sqrt(Util.square(kmToPixel(advance))+Util.square(road.getLaneSize()))));
 		}
-		newPosition = new Point2D.Float(position.x + pixelAdvance, getRectY(position, lane));
+		angle += plusAngle;
+		angle%=360;
+		if(status == Status.CHANGELEFT ){
+//			angle = (float) (angle * (Math.sqrt(Util.square(kmToPixel(advance))+Util.square(road.getLaneSize()))/kmToPixel(advance)));
+			return getChangePos(position, angle, lane, (-1) * getYChange(kmToPixel(advance)));
+		} else if(status == Status.CHANGERIGHT ){
+			angle = (float) (angle / (Math.sqrt(Util.square(kmToPixel(advance)+Util.square(road.getLaneSize())))));
+			return getChangePos(position, angle, lane, getYChange(kmToPixel(advance)));			
+		} else {
+			return getPos(angle, lane);
+		}
+	}
+
+	
+	private Point2D.Float rectPosition(Point2D.Float position, float advance, int lane, Status status){
+		Point2D.Float newPosition = null;
+		float xChange = kmToPixel(advance);
+		float yChange = 0;
+		if(status == Status.CHANGELEFT ){
+			xChange = getXChange(kmToPixel(advance));
+			yChange = (-1) * getYChange(kmToPixel(advance));
+		} else if(status == Status.CHANGERIGHT ){
+			xChange = getXChange(kmToPixel(advance));
+			yChange = getYChange(kmToPixel(advance));
+		} 
+		
+		if(isPosInUpperRectPart(position)){
+			xChange = xChange * -1;
+			yChange = yChange * -1;
+		}
+		if(status == Status.CHANGELEFT ||status == Status.CHANGERIGHT){
+			newPosition = new Point2D.Float(position.x + xChange, position.y + yChange);
+		} else {
+			newPosition = new Point2D.Float(position.x + xChange, getRectY(position, lane));
+		}
 		return newPosition;
 	}
+
 	
 	//---------//
 
@@ -254,8 +370,18 @@ public class HighWay {
 		Point2D.Float pos = new Point2D.Float();
 		pos.x = (float) ((Math.cos(radian) * road.getOvalPartSize()/2));
 		pos.y = (float) ((Math.sin(radian) * road.getOvalPartSize()/2));
-		return getCirclePoint(normalCoords(pos), lane);
+		return getCirclePoint(normalCoords(pos), lane);		
 	}
+	
+	private Point2D.Float getChangePos(Point2D.Float position, float angle, int lane, float yChange) {
+		float diameter = Util.getDistance(position, road.getCircleCenter()) + yChange;
+		float radian = Util.toRadian(angle);
+		Point2D.Float pos = new Point2D.Float();
+		pos.x = (float) (Math.cos(radian) * diameter);
+		pos.y = (float) (Math.sin(radian) * diameter);
+		return normalCoords(pos);
+		
+	}	
 
 	private Point2D.Float circleCenteredCoords(Point2D.Float position) {
 		return new Point2D.Float(position.x - road.getBorderSize() - road.getOvalPartSize()/2,
@@ -281,6 +407,13 @@ public class HighWay {
 		float x = road.getCircleCenter().x + r*(newPoint.x-road.getCircleCenter().x)/Util.getDistance(newPoint,road.getCircleCenter());
 		float y = road.getCircleCenter().y + r*(newPoint.y-road.getCircleCenter().y)/Util.getDistance(newPoint,road.getCircleCenter());
 		
+		Point2D.Float circlePoint = new Point2D.Float(x, y);		
+		return circlePoint;
+	}
+	
+	private Point2D.Float getCirclePoint(Point2D.Float newPoint, float r) {
+		float x = road.getCircleCenter().x + r*(newPoint.x-road.getCircleCenter().x)/Util.getDistance(newPoint,road.getCircleCenter());
+		float y = road.getCircleCenter().y + r*(newPoint.y-road.getCircleCenter().y)/Util.getDistance(newPoint,road.getCircleCenter());	
 		Point2D.Float circlePoint = new Point2D.Float(x, y);		
 		return circlePoint;
 	}
@@ -339,5 +472,13 @@ public class HighWay {
 		for (RoadObject roadObject : roadObjects) {
 			this.getRoadObjects().remove(roadObject);
 		}
+	}
+	
+	private float getXChange(float kmToPixel) {
+		return kmToPixel*(float) (Math.sin(Util.toRadian(45)));
+	}
+	
+	private float getYChange(float kmToPixel) {
+		return kmToPixel*(float) (Math.cos(Util.toRadian(45)));
 	}
 }

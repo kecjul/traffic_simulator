@@ -13,7 +13,7 @@ public class Car extends RoadObject{
 	private Driver driver;
 	private LinkedList<RoadObject> sights = new LinkedList<RoadObject>();
 	private LinkedList<Float> times = new LinkedList<Float>();
-	
+
 	Car(){setDriver(new Driver());}
 	
 	Car(Point2D.Float startPosition){
@@ -58,6 +58,26 @@ public class Car extends RoadObject{
 			setCurrentSpeed(getMaxSpeed());
 			getDriver().s = Status.DRIVING;
 		}		
+	}
+	
+
+	public void change(RoadObject forward, RoadObject backward) {
+		// TODO Auto-generated method stub
+		if(canChange(forward, backward)){
+			if(getDriver().s == Status.MIGHTCHANGELEFT){
+				getDriver().s = Status.CHANGELEFT;
+			} else if(getDriver().s == Status.MIGHTCHANGERIGHT){
+				getDriver().s = Status.CHANGERIGHT;
+			}
+		}
+	}
+	
+	private boolean canChange(RoadObject forward, RoadObject backward){
+		//TODO
+		if(forward == null && backward == null){
+			return true;
+		}
+		return false;
 	}
 
 	public float getAdvance(float timeSpeed){
