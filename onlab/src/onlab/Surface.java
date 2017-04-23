@@ -25,7 +25,7 @@ public class Surface extends JPanel{
 	 */
 	private static final long serialVersionUID = 1L;
 	ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
-	private static int laneCount = 2;
+	private static int laneCount = 3;
 	
 	float size = 450;
 	static int carSize = 20;

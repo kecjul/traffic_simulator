@@ -3,7 +3,33 @@ package onlab;
 import java.awt.geom.Point2D;
 
 public class Util {
-
+	enum Direction {
+		LEFT {
+			@Override
+			public String toString() {
+				return "left";
+			}
+		},
+		RIGHT {
+			@Override
+			public String toString() {
+				return "right";
+			}
+		},
+		FORWARD {
+			@Override
+			public String toString() {
+				return "forward";
+			}
+		},
+		BACKWARD {
+			@Override
+			public String toString() {
+				return "backward";
+			}
+		}
+	}
+	
 	public static float toRadian(float angle) {
 		return (float) ((angle / 180) * Math.PI);
 	}

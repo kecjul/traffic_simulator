@@ -10,15 +10,17 @@ public class Road {
 	private float laneSize;
 	private Point2D.Float startPosition;
 	private Point2D.Float circleCenter;
+	private int laneCount;
 	
-	public Road(int ovalBorder, int borderSize, int firstOvalPartSize, int firstRectPartSize, int laneSize2, Point2D.Float startPosition, Point2D.Float circleCenter) {
+	public Road(int ovalBorder, int borderSize, int firstOvalPartSize, int firstRectPartSize, int laneSize, Point2D.Float startPosition, Point2D.Float circleCenter, int laneCount) {
 		setBorderPoint(ovalBorder);
 		setBorderSize(borderSize);
 		setOvalPartSize(firstOvalPartSize);
 		setRectPartSize(firstRectPartSize);
-		setLaneSize(laneSize2);
+		setLaneSize(laneSize);
 		setStartPosition(startPosition);
 		setCircleCenter(circleCenter);
+		setLaneCount(laneCount);
 	}
 	public float getBorderPoint() {
 		return borderPoint;
@@ -64,5 +66,11 @@ public class Road {
 	}
 	public void setCircleCenter(Point2D.Float circleCenter) {
 		this.circleCenter = circleCenter;
+	}
+	public int getLaneCount() {
+		return laneCount;
+	}
+	public void setLaneCount(int laneCount) {
+		this.laneCount = laneCount;
 	}
 }

@@ -35,8 +35,9 @@ public class Car extends RoadObject{
 		this.setDriver(new Driver(prefSpeed, range, safety));
 	}
 	
-	public void drive(RoadObject inSight) {
+	public void drive() {
 		float acc = 0;
+		RoadObject inSight = HighWay.getSightForward(this, getLane());
 		addSights(inSight);
 		addTimes((float) System.nanoTime());
 		if ((getTimes().peekLast() - getTimes().peekFirst()) > secToNano(getDriver().getReactionTime())) {
@@ -60,24 +61,21 @@ public class Car extends RoadObject{
 		}		
 	}
 	
-
-	public void change(RoadObject forward, RoadObject backward) {
-		// TODO Auto-generated method stub
-		if(canChange(forward, backward)){
-			if(getDriver().s == Status.MIGHTCHANGELEFT){
-				getDriver().s = Status.CHANGELEFT;
-			} else if(getDriver().s == Status.MIGHTCHANGERIGHT){
-				getDriver().s = Status.CHANGERIGHT;
-			}
+	public RoadObject getSight(Util.Direction dirLR, Util.Direction dirFB){
+		int lane = this.getLane();
+		RoadObject result = null;
+		if(dirLR == Util.Direction.LEFT){
+			lane++;
+		} else if(dirLR == Util.Direction.RIGHT){
+			lane--;
 		}
-	}
-	
-	private boolean canChange(RoadObject forward, RoadObject backward){
-		//TODO
-		if(forward == null && backward == null){
-			return true;
-		}
-		return false;
+		
+		if(dirFB == Util.Direction.FORWARD){
+			result = HighWay.getSightForward(this, lane);
+		} else if(dirFB == Util.Direction.BACKWARD){
+			result = HighWay.getSightBackward(this, lane);			
+		}		
+		return result;
 	}
 
 	public float getAdvance(float timeSpeed){
