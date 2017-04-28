@@ -155,6 +155,7 @@ public class HighWay {
 				Car thisCar = (Car) roadObject;
 				thisCar.drive();				
 				newCarPosition(thisCar);
+				System.out.println("ID: " + thisCar.id + " " + thisCar.getDriver().getStatus().toString());
 			} else if (roadObject instanceof Block) {
 				Block thisBlock = (Block) roadObject;
 				if (thisBlock.tick()) {
@@ -166,7 +167,6 @@ public class HighWay {
 	}
 	
 	static public RoadObject getSightForward(Car asker, int lane) {
-		//TODO
 		RoadObject result = null;
 		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
 			result = getSightInOvalPart(asker, lane, Util.Direction.FORWARD);
@@ -178,7 +178,6 @@ public class HighWay {
 	
 
 	static public RoadObject getSightBackward(Car asker, int lane) {
-		//TODO
 		RoadObject result = null;
 		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
 			result = getSightInOvalPart(asker, lane, Util.Direction.BACKWARD);
@@ -285,16 +284,15 @@ public class HighWay {
 	private Point2D.Float ovalPosition(Point2D.Float position, Float advance, int lane, Status status){	
 		float angle = getAngle(position, lane);
 		float plusAngle = getAngleFromAdvance(kmToPixel(advance), lane);
-		if(status == Status.CHANGELEFT ){
+		if(status == Status.CHANGELEFT || status == Status.CHANGERIGHT ){
+			//TODO
 			plusAngle = (float) (plusAngle * (kmToPixel(advance)/Math.sqrt(Util.square(kmToPixel(advance))+Util.square(road.getLaneSize()))));
 		}
 		angle += plusAngle;
 		angle%=360;
 		if(status == Status.CHANGELEFT ){
-//			angle = (float) (angle * (Math.sqrt(Util.square(kmToPixel(advance))+Util.square(road.getLaneSize()))/kmToPixel(advance)));
 			return getChangePos(position, angle, lane, (-1) * getYChange(kmToPixel(advance)));
 		} else if(status == Status.CHANGERIGHT ){
-			angle = (float) (angle / (Math.sqrt(Util.square(kmToPixel(advance)+Util.square(road.getLaneSize())))));
 			return getChangePos(position, angle, lane, getYChange(kmToPixel(advance)));			
 		} else {
 			return getPos(angle, lane);
@@ -340,8 +338,9 @@ public class HighWay {
 	private Point2D.Float getPos(float angle, int lane) {
 		float radian = Util.toRadian(angle);
 		Point2D.Float pos = new Point2D.Float();
-		pos.x = (float) ((Math.cos(radian) * road.getOvalPartSize()/2));
-		pos.y = (float) ((Math.sin(radian) * road.getOvalPartSize()/2));
+		float diameter = getDiameter(lane);
+		pos.x = (float) ((Math.cos(radian) * diameter));
+		pos.y = (float) ((Math.sin(radian) * diameter));
 		return getCirclePoint(normalCoords(pos), lane);		
 	}
 	
@@ -357,7 +356,7 @@ public class HighWay {
 
 	private static Point2D.Float circleCenteredCoords(Point2D.Float position) {
 		return new Point2D.Float(position.x - road.getBorderSize() - road.getOvalPartSize()/2,
-				(road.getOvalPartSize()/2) - (position.y - road.getBorderSize()));
+				(road.getOvalPartSize()/2) - position.y + road.getBorderSize());
 	}
 	
 	private Point2D.Float normalCoords(Point2D.Float circlePosition) {
