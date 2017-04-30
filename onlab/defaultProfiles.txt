@@ -1,0 +1,18 @@
+DriverProfile 1
+name: nagyi
+maxSpeed: 100.0
+maxAcc: 5.0
+color: 0 0 255 
+actualSpeed: 50.0
+prefSpeed: 80.0
+rangeOfView: 40.0
+safetyGap: 20.0
+DriverProfile 2
+name: száguldó
+maxSpeed: 180.0
+maxAcc: 2.0
+color: 255 0 0 
+actualSpeed: 100.0
+prefSpeed: 120.0
+rangeOfView: 50.0
+safetyGap: 10.0
