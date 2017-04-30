@@ -32,13 +32,16 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	Controller c;
 	Surface surface;
 	JFrame chartFrame;
-	JPanel settings, combo, options, car, block, highWay, select, scar, sblock, log;
+	JPanel settings, combo, options, car, block, highWay, select, scar, sblock, log, lanes;
 	JLabel newObjectTitle, carTitle, driverTitle, blockTitle, aditional, selectedTitle, selectedCarObject, selectedBlockObject;
 	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLenght;
-	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, tblockDuration, thwLenght;
+	JLabel lLanes, ldpChooser;
+	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, 
+			tblockDuration, thwLenght, stblockDuration, sthwLengh;
+	JTextField tLanes;
 	JLabel  slcarMaxSpeed, slcarMaxAcc, slcarColor, sldriverPrefSpeed, sldriverRange, sldriverSafety, slblockDuration, slhwLenght;
-	JTextField stcarMaxSpeed, stcarMaxAcc, stdriverPrefSpeed, stdriverRange, stdriverSafety, stblockDuration, sthwLenght;
-	JComboBox typeChooser , colorChooser, scolorChooser;
+	JLabel  stcarMaxSpeed, stcarMaxAcc, stdriverPrefSpeed, stdriverRange, stdriverSafety;
+	JComboBox typeChooser , colorChooser, scolorChooser, dpChooser;
 	JButton bPause, bSave, bLoad, bcAccept, bbAccept, bcDel, bbDel, bChart;
 	JTextArea tLog;
 	JScrollPane logScroll;
@@ -119,19 +122,26 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setResizable(false);
 		
-		return new Road(surface.ovalBorder, surface.firstBorder, 
-				surface.firstOvalPartSize, surface.firstRectPartSize, 
-				surface.laneSize, surface.getStartPosition(),
-				surface.circleCenter, surface.getLaneCount());
+		return getRoad();
 	}
 	
 	private void setSelectPanel() {
 		SpringLayout carLayout = new SpringLayout();
 		scar = new JPanel(carLayout);
 		
-		selectedCarObject = new JLabel("Car");
+		selectedCarObject = new JLabel("ID: ");
+		ldpChooser = new JLabel("Driver Profile: ");
+		dpChooser = new JComboBox<String>(getDriverProfiles());
+		dpChooser.setSelectedIndex(0);
+		dpChooser.addActionListener(this);
+		scar.add(ldpChooser);
+		scar.add(dpChooser);
 		scar.add(selectedCarObject);
-		carLayout.putConstraint(SpringLayout.WEST, selectedCarObject, 5, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.WEST, ldpChooser, 5, SpringLayout.WEST, scar);
+		carLayout.putConstraint(SpringLayout.NORTH, ldpChooser, 5, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.WEST, dpChooser, 120, SpringLayout.WEST, ldpChooser);
+		carLayout.putConstraint(SpringLayout.NORTH, dpChooser, 5, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.WEST, selectedCarObject, 120, SpringLayout.WEST, dpChooser);
 		carLayout.putConstraint(SpringLayout.NORTH, selectedCarObject, 5, SpringLayout.NORTH, scar);
 
 		slcarMaxSpeed = new JLabel("Max Speed: ");
@@ -148,10 +158,10 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		carLayout.putConstraint(SpringLayout.NORTH, slcarColor, 25, SpringLayout.NORTH, slcarMaxAcc);
 
 
-		stcarMaxSpeed = new JTextField(5);
-		stcarMaxAcc = new JTextField(5);
+		stcarMaxSpeed = new JLabel();
+		stcarMaxAcc = new JLabel();
 		stcarMaxSpeed.setToolTipText("km/h");
-		stcarMaxAcc.setToolTipText("from 0 to 100 km/h in sec");
+		stcarMaxAcc.setToolTipText("the time it takes to get from 0 to 100 km/h (sec)");
 		scolorChooser = new JComboBox(colorsS);
 		scar.add(stcarMaxSpeed);
 		scar.add(stcarMaxAcc);
@@ -177,9 +187,9 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		carLayout.putConstraint(SpringLayout.WEST, sldriverSafety, 200, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, sldriverSafety, 25, SpringLayout.NORTH, sldriverRange);
 
-		stdriverPrefSpeed = new JTextField(5);
-		stdriverRange = new JTextField(5);
-		stdriverSafety = new JTextField(5);
+		stdriverPrefSpeed = new JLabel();
+		stdriverRange = new JLabel();
+		stdriverSafety = new JLabel();
 		stdriverPrefSpeed.setToolTipText("km/h");
 		stdriverRange.setToolTipText("km");
 		stdriverSafety.setToolTipText("km");
@@ -237,6 +247,10 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		
 	}
 
+	private String[] getDriverProfiles() {
+		return HighWay.getDriverProfileNames();
+	}
+
 	public void setOptions(){
 		combo = new JPanel();
 		newObjectTitle = new JLabel("New Road Object: ");
@@ -260,6 +274,13 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		thwLenght.setText("12960000");
 		thwLenght.setToolTipText("12.960.000 km is ideal as 100 km/h speed will show as 1 deg/sec");
 		thwLenght.addActionListener(this);
+
+		lLanes = new JLabel("HighWay lenght: ");
+		tLanes = new JTextField(1);
+		tLanes.setText("3");
+		tLanes.setToolTipText("Number of lanes (1-6)");
+		tLanes.addActionListener(this);
+		
 		bPause = new JButton("Pause");
 		bPause.addActionListener(this);
 		bChart = new JButton("Speed chart");
@@ -272,6 +293,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		highWay.add(aditional);
 		highWay.add(lhwLenght);
 		highWay.add(thwLenght);
+		highWay.add(lLanes);
+		highWay.add(tLanes);
 		highWay.add(bPause);
 		highWay.add(bChart);
 		highWay.add(bSave);
@@ -282,10 +305,17 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		hwLayout.putConstraint(SpringLayout.NORTH, lhwLenght, 25, SpringLayout.NORTH, aditional);
 		hwLayout.putConstraint(SpringLayout.WEST, thwLenght, 120, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, thwLenght, 25, SpringLayout.NORTH, aditional);
+		
+
+		hwLayout.putConstraint(SpringLayout.WEST, lLanes, 5, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.NORTH, lLanes, 25, SpringLayout.NORTH, lhwLenght);
+		hwLayout.putConstraint(SpringLayout.WEST, tLanes, 120, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.NORTH, tLanes, 25, SpringLayout.NORTH, lhwLenght);
+		
 		hwLayout.putConstraint(SpringLayout.WEST, bPause, 5, SpringLayout.WEST, highWay);
-		hwLayout.putConstraint(SpringLayout.NORTH, bPause, 50, SpringLayout.NORTH, lhwLenght);
+		hwLayout.putConstraint(SpringLayout.NORTH, bPause, 50, SpringLayout.NORTH, lLanes);
 		hwLayout.putConstraint(SpringLayout.WEST, bChart, 80, SpringLayout.WEST, highWay);
-		hwLayout.putConstraint(SpringLayout.NORTH, bChart, 50, SpringLayout.NORTH, lhwLenght);
+		hwLayout.putConstraint(SpringLayout.NORTH, bChart, 50, SpringLayout.NORTH, lLanes);
 		hwLayout.putConstraint(SpringLayout.WEST, bSave, 10, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bSave, 35, SpringLayout.NORTH, bPause);
 		hwLayout.putConstraint(SpringLayout.WEST, bLoad, 80, SpringLayout.WEST, highWay);
@@ -317,7 +347,6 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		carLayout.putConstraint(SpringLayout.NORTH, lcarMaxAcc, 25, SpringLayout.NORTH, lcarMaxSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, lcarColor, 5, SpringLayout.WEST, car);
 		carLayout.putConstraint(SpringLayout.NORTH, lcarColor, 25, SpringLayout.NORTH, lcarMaxAcc);
-
 
 		tcarMaxSpeed = new JTextField(10);
 		tcarMaxAcc = new JTextField(10);
@@ -480,18 +509,34 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() instanceof JComboBox){
-			JComboBox cb = (JComboBox)e.getSource();
-	        String type = (String)cb.getSelectedItem();
-	        typeSelected(type);
+			JComboBox cb = (JComboBox)e.getSource();	        
+	        if(cb == typeChooser){
+	        	String type = (String)cb.getSelectedItem();	        	
+	        	typeSelected(type);
+	        } else if(cb == dpChooser){
+	        	String profile = (String)cb.getSelectedItem();
+	        	if(profile != null && !profile.isEmpty() 
+	        			&& selected instanceof Car && !profile.equals(((Car) selected).getName())){
+	        		int id = selected.id;
+		        	selected = HighWay.getDriverProfile(profile);
+		        	selected.id = id;
+		        	setSelected();
+	        	}
+	        }
 		}	
 		if(e.getSource() instanceof JTextField){
 			JTextField tf = (JTextField)e.getSource();
-	        String lenght = (String)tf.getText();
-	        if("".equals(lenght))
-	        	lenght = new String("1500");
-			c.hw.setLenght(Float.parseFloat(lenght));
-			if(!Float.toString(c.hw.getLenght()).equals(thwLenght.getText()))
-				thwLenght.setText(Float.toString(c.hw.getLenght()));
+	        String text = (String)tf.getText();
+	        if(tf == thwLenght){
+		        if("".equals(text))
+		        	text = new String("1500");
+				c.hw.setLenght(Float.parseFloat(text));
+				if(!Float.toString(c.hw.getLenght()).equals(thwLenght.getText()))
+					thwLenght.setText(Float.toString(c.hw.getLenght()));
+	        } else if (tf == tLanes){
+	        	surface.setLaneCount(Integer.parseInt(text));
+	        	c.restart();
+	        }
 		}
 		if(e.getSource() instanceof JButton){
 			JButton b = (JButton)e.getSource();
@@ -536,9 +581,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		        	if(file != null)
 		        		c.LoadGame(file);
 		        } 	
-			} else if(b == bcAccept){
-				c.hw.modifyCar(selected.id, Float.parseFloat(stcarMaxSpeed.getText()), Float.parseFloat(stcarMaxAcc.getText()), colorsC[scolorChooser.getSelectedIndex()], 
-					Float.parseFloat(stdriverPrefSpeed.getText()), Float.parseFloat(stdriverRange.getText()), Float.parseFloat(stdriverSafety.getText()));	
+			} else if(b == bcAccept && selected instanceof Car){
+				c.hw.modifyCar((Car)selected);	
 			} else if(b == bbAccept){
 				c.hw.modifyBlock(selected.id, Float.parseFloat(stblockDuration.getText()));
 			} else if(b == bcDel || b == bbDel){
@@ -576,8 +620,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 			if(selected instanceof Car){
 				selectSplit.setBottomComponent(scar);
 //				select.remove(sblock);
-//				select.add(scar);
-				selectedCarObject.setText("Car " + selected.id);
+//				select.add(scar);							
+				selectedCarObject.setText("ID: " + selected.id);
 				stcarMaxSpeed.setText(Float.toString(((Car) selected).getMaxSpeed()));
 				stcarMaxAcc.setText(Float.toString(((Car) selected).getMaxAcc()));
 				for (int i = 0; i < colorsC.length; i++){
@@ -592,6 +636,12 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 				stdriverPrefSpeed.setText(Float.toString(((Car) selected).getDriver().getPrefSpeed()));
 				stdriverRange.setText(Float.toString(((Car) selected).getDriver().getRangeOfView()));
 				stdriverSafety.setText(Float.toString(((Car) selected).getDriver().getSafetyGap()));
+
+				dpChooser.removeAllItems();
+				for(String name : getDriverProfiles()){
+					dpChooser.addItem(name);
+				}
+				dpChooser.setSelectedItem(((Car) selected).getName());	
 			}
 			else if(selected instanceof Block){
 				selectSplit.setBottomComponent(sblock);
@@ -607,7 +657,13 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		selectSplit.repaint();
 		selectSplit.revalidate();
 	}
-	
+
+	public Road getRoad() {
+		return new Road(surface.ovalBorder, surface.firstBorder, 
+				surface.firstOvalPartSize, surface.firstRectPartSize, 
+				surface.laneSize, surface.getStartPosition(),
+				surface.circleCenter, surface.getLaneCount());
+	}
 	
 	@Override
 	public void mouseClicked(MouseEvent e) {
@@ -621,8 +677,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 				Point2D.Float roadPoint = surface.getRoadPoint(newPoint, lane);
 				c.hw.addBlock(roadPoint, lane, Float.parseFloat(tblockDuration.getText()));
 			}
+			selected = surface.getObject(newPoint);
 		}
-		selected = surface.getObject(newPoint);
 		setSelected();
 	}
 
@@ -649,5 +705,6 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		// TODO Auto-generated method stub
 		
 	}
+
 
 }

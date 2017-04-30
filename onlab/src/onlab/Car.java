@@ -13,6 +13,7 @@ public class Car extends RoadObject{
 	private Driver driver;
 	private LinkedList<RoadObject> sights = new LinkedList<RoadObject>();
 	private LinkedList<Float> times = new LinkedList<Float>();
+	private String name;
 
 	Car(){setDriver(new Driver());}
 	
@@ -35,6 +36,14 @@ public class Car extends RoadObject{
 		this.setDriver(new Driver(prefSpeed, range, safety));
 	}
 	
+	public Car(java.awt.geom.Point2D.Float startPosition, Car car, int lane) {
+		count++;
+		id = count;
+		setPosition(startPosition);
+		setDriverProfile(car);
+		setLane(lane);
+	}
+
 	public void drive() {
 		float acc = 0;
 		RoadObject inSight = HighWay.getSightForward(this, getLane());
@@ -153,5 +162,22 @@ public class Car extends RoadObject{
 	
 	public void addTimes(Float time) {
 		times.add(time);
+	}
+
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setDriverProfile(Car car) {
+		this.setName(car.getName());
+		this.setMaxSpeed(car.getMaxSpeed());
+		this.setMaxAcc(car.getMaxAcc());
+		this.setColor(car.getColor());
+		this.setCurrentSpeed(0);
+		Driver d = car.getDriver();
+		this.setDriver(new Driver(d.getPrefSpeed(), d.getRangeOfView(), d.getSafetyGap()));
 	}
 }

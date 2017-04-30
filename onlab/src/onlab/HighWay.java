@@ -11,6 +11,7 @@ public class HighWay {
 	private float kmLenght = 5;
 	private static ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
 	private static Road road;
+	private static ArrayList<Car> driverProfiles = new ArrayList<Car>();;
 	private float timeLapse = 100;
 	
 	HighWay(float lenght) {
@@ -18,6 +19,8 @@ public class HighWay {
 	}
 
 	public HighWay(Road road, float tl) {
+		this.roadObjects = new ArrayList<RoadObject>();
+		RoadObject.count = 0;
 		this.road = road;
 		setTimeLapse(tl);
 		setLenght((float) (road.getRectPartSize()*2 + road.getOvalPartSize()*Math.PI/2));
@@ -59,16 +62,10 @@ public class HighWay {
 		getRoadObjects().add(newBlock);
 	}
 
-	public void modifyCar(int id, float maxSpeed, float maxAcc, Color color,
-			float prefSpeed, float range, float safety) {
+	public void modifyCar(Car selected) {
 		for (RoadObject roadObject : getRoadObjects()) {
-			if (roadObject.id == id) {
-				((Car) roadObject).setMaxSpeed(maxSpeed);
-				((Car) roadObject).setMaxAcc(maxAcc);
-				((Car) roadObject).setColor(color);
-				((Car) roadObject).getDriver().setPrefSpeed(prefSpeed);
-				((Car) roadObject).getDriver().setRangeOfView(range);
-				((Car) roadObject).getDriver().setSafetyGap(safety);
+			if (roadObject.id == selected.id) {
+				((Car) roadObject).setDriverProfile(selected);
 				break;
 			}
 		}
@@ -133,13 +130,10 @@ public class HighWay {
 	}
 
 	public void newCar() {
-		if(getRoadObjects().size() == 1){
-			Car c = (Car) getRoadObjects().get(0);
-			c.getDriver().setPrefSpeed(5);
-			getRoadObjects().add(new Car(road.getStartPosition()));
-		} else{
-			getRoadObjects().add(new Car(road.getStartPosition()));
-		}
+		int index = getRoadObjects().size();
+		int profileIndex = index % driverProfiles.size();
+		int laneIndex = (index % road.getLaneCount()) + 1;
+		getRoadObjects().add(new Car(road.getStartPosition(), driverProfiles.get(profileIndex), laneIndex));
 	}
 
 	/* 
@@ -241,7 +235,6 @@ public class HighWay {
 		Point2D.Float newPosition;
 		Status status = thisCar.getDriver().getStatus();
 		if(status == Status.CHANGELEFT || status == Status.CHANGERIGHT  ){
-			System.out.println("ID " + thisCar.id);
 			if(isChangeComplete(thisCar)){
 				int lane = thisCar.getLane();
 				if(thisCar.getDriver().getStatus() == Status.CHANGELEFT ){
@@ -467,5 +460,31 @@ public class HighWay {
 			return true;
 		}
 		return false;
+	}
+
+	public static String[] getDriverProfileNames() {
+		if(!driverProfiles.isEmpty()){
+			String[] names = new String[driverProfiles.size()];
+			for (int i = 0; i < names.length; i++) {
+				names[i] = driverProfiles.get(i).getName();
+			}				
+			return names;
+		} else {
+			String[] s = {"asd"};
+			return s;
+		}
+	}
+
+	public static RoadObject getDriverProfile(String profile) {
+		for(Car dp : driverProfiles){
+			if(profile.equals(dp.getName())){
+				return dp;
+			}
+		}
+		return null;
+	}
+
+	public void addDriverProfiles(ArrayList<Car> loadDefaultDriverProfiles) {
+		driverProfiles = loadDefaultDriverProfiles;		
 	}
 }

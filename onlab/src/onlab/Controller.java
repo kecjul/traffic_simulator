@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Controller{
 
@@ -31,13 +32,16 @@ public class Controller{
 	
 	private float deltaCarTime;
 	private float newCarTime = 2000.0f;
+	
+	private int timeLapse = 50;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
 	Controller(){
 		this.w = new Window(this);
 		Road road = w.initUI();
-		this.hw = new HighWay(road, 50);
+		this.hw = new HighWay(road, timeLapse);
+		this.hw.addDriverProfiles(LoadDefaultDriverProfiles());
 		w.setVisible(true);
 		deltaTime = 0;
 		prevTime = 0;
@@ -243,8 +247,7 @@ public class Controller{
 					case "safetyGap:":
 						c.getDriver().setSafetyGap(Float.parseFloat(name[1]));
 						hw.getRoadObjects().add(c);
-						break;
-						
+						break;						
 	
 					case "duration:":
 						b.duration =  Float.parseFloat(name[1]);
@@ -262,6 +265,102 @@ public class Controller{
 				}
 			}
 		}
+	}
+
+	public ArrayList<Car> LoadDefaultDriverProfiles(){
+		ArrayList<Car> driverprofiles = new ArrayList<>();
+		w.chartFrame.removeAll();
+		w.chartFrame.setVisible(false);
+		w.setCharts();
+		BufferedReader br = null;
+		String everything = null;
+		try {
+			br = new BufferedReader(new FileReader("defaultProfiles.txt"));
+		    StringBuilder sb = new StringBuilder();
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        sb.append(line);
+		        sb.append(System.lineSeparator());
+		        line = br.readLine();
+		    }
+		    everything = sb.toString();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+		    try {
+		    	if (br != null)
+		    		br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if(everything != null){
+			String[] data = everything.split(System.lineSeparator());
+			Car temp = null;
+			for (String row : data) {
+				String[] name = row.split(" ");
+				if(name != null){
+					switch (name[0]) {
+					case "DriverProfile":
+						temp = newDriverProfile(name[1]);
+						break;
+	
+					case "name:":
+						temp.setName(name[1]);
+						break;
+						
+					case "maxSpeed:":
+						temp.setMaxSpeed(Float.parseFloat(name[1]));
+						break;
+	
+					case "maxAcc:":
+						temp.setMaxAcc(Float.parseFloat(name[1]));
+						break;
+	
+					case "color:":
+						Color col = new Color(Integer.parseInt(name[1]), Integer.parseInt(name[2]), Integer.parseInt(name[3]));
+						temp.setColor(col);
+						break;
+	
+					case "actualSpeed:":
+						temp.setCurrentSpeed(Float.parseFloat(name[1]));
+						break;
+	
+					case "prefSpeed:":
+						temp.getDriver().setPrefSpeed(Float.parseFloat(name[1]));
+						break;
+						
+					case "rangeOfView:":
+						temp.getDriver().setRangeOfView(Float.parseFloat(name[1]));
+						break;
+						
+					case "safetyGap:":
+						temp.getDriver().setSafetyGap(Float.parseFloat(name[1]));
+						driverprofiles.add(temp);
+						break;
+					default:
+						System.out.println("Hiba!");
+						break;
+					}
+				}
+			}
+		}
+		return driverprofiles;
+	}
+	
+	private Car newDriverProfile(String id) {
+		Car c = new Car();
+		c.id = Integer.parseInt(id);
+		RoadObject.count = 0;
+		return c;
+	}
+
+	public void restart() {
+		Road road = w.getRoad();
+		this.hw = new HighWay(road, 50);
 	}
 
 }

@@ -40,13 +40,13 @@ public class Driver {
 		CHANGELEFT {
 			@Override
 			public String toString() {
-				return "changeleft";
+				return "changing lanes to the left";
 			}
 		},
 		CHANGERIGHT {
 			@Override
 			public String toString() {
-				return "changeright";
+				return "changing lanes to the right";
 			}
 		}
 	};
