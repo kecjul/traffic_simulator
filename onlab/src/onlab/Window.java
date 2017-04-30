@@ -35,19 +35,20 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	JPanel settings, combo, options, car, block, highWay, select, scar, sblock, log, lanes;
 	JLabel newObjectTitle, carTitle, driverTitle, blockTitle, aditional, selectedTitle, selectedCarObject, selectedBlockObject;
 	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLenght;
-	JLabel lLanes, ldpChooser;
+	JLabel lLanes, ldpChooser, scolorChooser, lLaneSpan;
 	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, 
 			tblockDuration, thwLenght, stblockDuration, sthwLengh;
 	JTextField tLanes;
 	JLabel  slcarMaxSpeed, slcarMaxAcc, slcarColor, sldriverPrefSpeed, sldriverRange, sldriverSafety, slblockDuration, slhwLenght;
 	JLabel  stcarMaxSpeed, stcarMaxAcc, stdriverPrefSpeed, stdriverRange, stdriverSafety;
-	JComboBox typeChooser , colorChooser, scolorChooser, dpChooser;
+	JComboBox<String> typeChooser , colorChooser, dpChooser;
+	JComboBox<Integer> cbLaneSpan;
 	JButton bPause, bSave, bLoad, bcAccept, bbAccept, bcDel, bbDel, bChart;
 	JTextArea tLog;
 	JScrollPane logScroll;
 	JSplitPane split1, split2, split3; 
 	JSplitPane settingsSplit, selectSplit, logSplit; 
-	final static String CARPANEL = "Car";
+	final static String CARPANEL = "Driver Profile";
 	final static String BLOCKPANEL = "Road Block";
 	float size = 450;
 	String[] types = {CARPANEL, BLOCKPANEL};
@@ -162,7 +163,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		stcarMaxAcc = new JLabel();
 		stcarMaxSpeed.setToolTipText("km/h");
 		stcarMaxAcc.setToolTipText("the time it takes to get from 0 to 100 km/h (sec)");
-		scolorChooser = new JComboBox(colorsS);
+		scolorChooser = new JLabel();
 		scar.add(stcarMaxSpeed);
 		scar.add(stcarMaxAcc);
 		scar.add(scolorChooser);
@@ -427,6 +428,22 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		block.add(tblockDuration);
 		blockLayout.putConstraint(SpringLayout.WEST, tblockDuration, 120, SpringLayout.WEST, block);
 		blockLayout.putConstraint(SpringLayout.NORTH, tblockDuration, 25, SpringLayout.NORTH, blockTitle);
+
+		lLaneSpan = new JLabel("Lane span: ");
+		block.add(lLaneSpan);
+		blockLayout.putConstraint(SpringLayout.WEST, lLaneSpan, 5, SpringLayout.WEST, block);
+		blockLayout.putConstraint(SpringLayout.NORTH, lLaneSpan, 25, SpringLayout.NORTH, lblockDuration);
+
+		Integer[] lanes = new Integer[surface.getLaneCount()];
+		for (int i = 0; i < lanes.length; i++) {
+			lanes[i] = i+1;
+		}
+		cbLaneSpan = new JComboBox<Integer>(lanes);
+		cbLaneSpan.setSelectedIndex(0);
+		cbLaneSpan.setToolTipText("?");
+		block.add(cbLaneSpan);
+		blockLayout.putConstraint(SpringLayout.WEST, cbLaneSpan, 120, SpringLayout.WEST, block);
+		blockLayout.putConstraint(SpringLayout.NORTH, cbLaneSpan, 25, SpringLayout.NORTH, lblockDuration);
 	}
 	
 	public void setLogPanel(){
@@ -513,15 +530,6 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 	        if(cb == typeChooser){
 	        	String type = (String)cb.getSelectedItem();	        	
 	        	typeSelected(type);
-	        } else if(cb == dpChooser){
-	        	String profile = (String)cb.getSelectedItem();
-	        	if(profile != null && !profile.isEmpty() 
-	        			&& selected instanceof Car && !profile.equals(((Car) selected).getName())){
-	        		int id = selected.id;
-		        	selected = HighWay.getDriverProfile(profile);
-		        	selected.id = id;
-		        	setSelected();
-	        	}
 	        }
 		}	
 		if(e.getSource() instanceof JTextField){
@@ -533,8 +541,14 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 				c.hw.setLenght(Float.parseFloat(text));
 				if(!Float.toString(c.hw.getLenght()).equals(thwLenght.getText()))
 					thwLenght.setText(Float.toString(c.hw.getLenght()));
-	        } else if (tf == tLanes){
+	        } else if (tf == tLanes){	        	
 	        	surface.setLaneCount(Integer.parseInt(text));
+	        	cbLaneSpan.removeAllItems();				
+	        	Integer[] lanes = new Integer[surface.getLaneCount()];
+	    		for (int i = 0; i < lanes.length; i++) {
+	    			cbLaneSpan.addItem(i+1);
+	    		}
+	    		cbLaneSpan.setSelectedIndex(0);
 	        	c.restart();
 	        }
 		}
@@ -582,6 +596,8 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		        		c.LoadGame(file);
 		        } 	
 			} else if(b == bcAccept && selected instanceof Car){
+	        	((Car)selected).setDriverProfile(HighWay.getDriverProfile((String)dpChooser.getSelectedItem()));
+	        	setSelected();
 				c.hw.modifyCar((Car)selected);	
 			} else if(b == bbAccept){
 				c.hw.modifyBlock(selected.id, Float.parseFloat(stblockDuration.getText()));
@@ -629,7 +645,7 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 						colorsC[i].getGreen() == ((Car) selected).getColor().getGreen() &&
 						colorsC[i].getBlue()== ((Car) selected).getColor().getBlue())
 					{
-						scolorChooser.setSelectedIndex(i);
+						scolorChooser.setText(colorsS[i]);
 						break;
 					}
 				}
@@ -640,8 +656,11 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 				dpChooser.removeAllItems();
 				for(String name : getDriverProfiles()){
 					dpChooser.addItem(name);
+					if(name.equals(((Car) selected).getName())){
+						dpChooser.setSelectedItem(name);	
+					}
 				}
-				dpChooser.setSelectedItem(((Car) selected).getName());	
+				
 			}
 			else if(selected instanceof Block){
 				selectSplit.setBottomComponent(sblock);
@@ -674,8 +693,23 @@ public class Window extends JFrame implements ActionListener, MouseListener {
 		if(selected == null && typeChooser.getSelectedItem().equals(BLOCKPANEL)){
 			if(!"".equals(tblockDuration.getText())){
 				int lane = surface.getNewObjectsLane(newPoint);
+				int span = (Integer) cbLaneSpan.getSelectedItem();
 				Point2D.Float roadPoint = surface.getRoadPoint(newPoint, lane);
 				c.hw.addBlock(roadPoint, lane, Float.parseFloat(tblockDuration.getText()));
+				int count = 1;
+				int i = 1;
+				while(count != span){
+					int actLane = lane + i;
+					if(actLane > 0 && actLane <= surface.getLaneCount()){
+						roadPoint = surface.getRoadPoint(newPoint, actLane);
+						c.hw.addBlock(roadPoint, actLane, Float.parseFloat(tblockDuration.getText()));
+						count++;
+					}
+					i = i * (-1);
+					if(i>0){
+						i++;
+					}
+				}
 			}
 			selected = surface.getObject(newPoint);
 		}

@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
+
 import onlab.Driver.Status;
 
 public class HighWay {
@@ -59,7 +60,7 @@ public class HighWay {
 	
 	public void addBlock(Point2D.Float click, int lane, float duration) {
 		Block newBlock = new Block(click, lane, duration);
-		getRoadObjects().add(newBlock);
+		getRoadObjects().add(newBlock);		
 	}
 
 	public void modifyCar(Car selected) {
@@ -475,7 +476,7 @@ public class HighWay {
 		}
 	}
 
-	public static RoadObject getDriverProfile(String profile) {
+	public static Car getDriverProfile(String profile) {
 		for(Car dp : driverProfiles){
 			if(profile.equals(dp.getName())){
 				return dp;
