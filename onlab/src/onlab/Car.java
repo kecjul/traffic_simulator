@@ -96,8 +96,11 @@ public class Car extends RoadObject{
 		return (float) time * 1000000000;
 	}
 
-	float getRange(){
+	public float getRange(){
 		return getDriver().getRangeOfView();
+	}
+	public void setRange(float range){
+		driver.setRangeOfView(range);
 	}
 
 	public float getMaxSpeed() {
@@ -179,5 +182,18 @@ public class Car extends RoadObject{
 		this.setCurrentSpeed(0);
 		Driver d = car.getDriver();
 		this.setDriver(new Driver(d.getPrefSpeed(), d.getRangeOfView(), d.getSafetyGap()));
+		this.setCurrentSpeed(d.getPrefSpeed());
+	}
+	
+	@Override
+	public Car clone(){
+		Car temp = new Car();
+		temp.setDriverProfile(this);
+		return temp;
+	}
+
+	public void setDriverProfile(String name) {
+		Car car = HighWay.getDriverProfile(name);
+		setDriverProfile(car);
 	}
 }

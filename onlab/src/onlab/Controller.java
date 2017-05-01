@@ -31,17 +31,18 @@ public class Controller{
 	private float prevTime;
 	
 	private float deltaCarTime;
-	private float newCarTime = 2000.0f;
+	private float newCarTime = 500.0f;
 	
-	private int timeLapse = 50;
+	private float timeWarp = 20;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
 	Controller(){
 		this.w = new Window(this);
 		Road road = w.initUI();
-		this.hw = new HighWay(road, timeLapse);
+		this.hw = new HighWay(road, getTimeWarp());
 		this.hw.addDriverProfiles(LoadDefaultDriverProfiles());
+		w.setProfilesPanel();
 		w.setVisible(true);
 		deltaTime = 0;
 		prevTime = 0;
@@ -56,7 +57,7 @@ public class Controller{
 		//tickTime = 10 ms
 		if(deltaTime>=tickTime){
 			if(s == Status.RUNNING){
-				if(deltaCarTime>=newCarTime){
+				if(deltaCarTime>=getNewCarTime()){
 					hw.newCar();
 					deltaCarTime = 0;
 				}
@@ -108,29 +109,40 @@ public class Controller{
 	public void SaveGame(File file){
 		StringBuffer sb  = new StringBuffer();
 
-		sb.append("lenght: ").append(Float.toString(hw.getLenght())).append(System.lineSeparator());
+		sb.append("newCarTimer: ").append(Float.toString(getNewCarTime())).append(System.lineSeparator());
+		sb.append("timeWarp: ").append(Float.toString(hw.getTimeWarp())).append(System.lineSeparator());
+		sb.append("lanes: ").append(hw.getLaneCount()).append(System.lineSeparator());
+		if(hw.getDriverProfiles().size()>0){
+			for (Car driverProfile : hw.getDriverProfiles()) {
+				sb.append("DriverProfile").append(System.lineSeparator());
+				sb.append("name: ").append(driverProfile.getName()).append(System.lineSeparator());
+				sb.append("maxSpeed: ").append(Float.toString(driverProfile.getMaxSpeed())).append(System.lineSeparator());
+				sb.append("maxAcc: ").append(Float.toString(driverProfile.getMaxAcc())).append(System.lineSeparator());
+				sb.append("color: ").append(Integer.toString(driverProfile.getColor().getRed())).append(" ")
+									.append(Integer.toString(driverProfile.getColor().getGreen())).append(" ")
+									.append(Integer.toString(driverProfile.getColor().getBlue())).append(" ").append(System.lineSeparator());
+				sb.append("prefSpeed: ").append(Float.toString(driverProfile.getDriver().getPrefSpeed())).append(System.lineSeparator());
+				sb.append("rangeOfView: ").append(Float.toString(driverProfile.getDriver().getRangeOfView())).append(System.lineSeparator());
+				sb.append("safetyGap: ").append(Float.toString(driverProfile.getDriver().getSafetyGap())).append(System.lineSeparator());
+			}
+		}
 		if(hw.getRoadObjects().size()>0){
 			for (RoadObject roadObject : hw.getRoadObjects()) {
 				if(roadObject instanceof Car){
 					Car c = (Car)roadObject;
 					sb.append("Car ").append(c.id).append(System.lineSeparator());
-					sb.append("position: ").append(Double.toString(c.getPosition().getX())).append(" ").append(Double.toString(c.getPosition().getY())).append(System.lineSeparator());
-					sb.append("maxSpeed: ").append(Float.toString(c.getMaxSpeed())).append(System.lineSeparator());
-					sb.append("maxAcc: ").append(Float.toString(c.getMaxAcc())).append(System.lineSeparator());
-					sb.append("color: ").append(Integer.toString(c.getColor().getRed())).append(" ")
-										.append(Integer.toString(c.getColor().getGreen())).append(" ")
-										.append(Integer.toString(c.getColor().getBlue())).append(" ").append(System.lineSeparator());
-					sb.append("actualSpeed: ").append(Float.toString(c.getCurrentSpeed())).append(System.lineSeparator());
-					sb.append("prefSpeed: ").append(Float.toString(c.getDriver().getPrefSpeed())).append(System.lineSeparator());
-					sb.append("rangeOfView: ").append(Float.toString(c.getDriver().getRangeOfView())).append(System.lineSeparator());
-					sb.append("safetyGap: ").append(Float.toString(c.getDriver().getSafetyGap())).append(System.lineSeparator());
+					sb.append("profile: ").append(c.getName()).append(System.lineSeparator());
+					sb.append("position: ").append(Double.toString(c.getPosition().getX())).append(" ").append(Double.toString(c.getPosition().getY())).append(System.lineSeparator());					
+					sb.append("actualSpeed: ").append(Float.toString(c.getCurrentSpeed())).append(System.lineSeparator());					
+					sb.append("lane: ").append(c.getLane()).append(System.lineSeparator());					
 				}
 				if(roadObject instanceof Block){
 					Block b = (Block)roadObject;
 					sb.append("Block ").append(b.id).append(System.lineSeparator());
 					sb.append("position: ").append(Double.toString(b.getPosition().getX())).append(" ").append(Double.toString(b.getPosition().getY())).append(System.lineSeparator());
 					sb.append("duration: ").append(Float.toString(b.duration)).append(System.lineSeparator());
-					sb.append("currentTime: ").append(Float.toString(b.currentTime)).append(System.lineSeparator());
+					sb.append("currentTime: ").append(Float.toString(b.currentTime)).append(System.lineSeparator());					
+					sb.append("lane: ").append(b.getLane()).append(System.lineSeparator());
 				}
 			}
 			sb.append("ObjectCount: ").append(RoadObject.count).append(System.lineSeparator());
@@ -192,33 +204,36 @@ public class Controller{
 				String[] name = row.split(" ");
 				if(name != null){
 					switch (name[0]) {
-					case "lenght:":
-						hw = new HighWay(Float.parseFloat(name[1]));
+					
+					case "newCarTimer:":
+						Float nct = Float.parseFloat(name[1]);
+						w.tNewCarTimer.setText(Float.toString(nct));
+						setNewCarTime(nct);
+						break;
+					case "timeWarp:":
+						Float tw = Float.parseFloat(name[1]);
+						w.tTimeWarp.setText(Float.toString(tw));
+						setTimeWarp(tw);
+						break;
+					case "lanes:":
+						int lanes = Integer.parseInt(name[1]);
+						w.surface.setLaneCount(lanes);
+						w.setLanes();
+						hw.setDriverProfiles(null);
 						break;
 	
 					case "ObjectCount:":
 						RoadObject.count = Integer.parseInt(name[1]);
 						break;
-		
-					case "Car":
-						isCar = true;
-						c = new Car();
-						c.id = Integer.parseInt(name[1]);
-						break;
-						
-					case "Block":
-						isCar = false;
-						b = new Block();
-						b.id = Integer.parseInt(name[1]);
-						break;
-						
-					case "position:":
-						if(isCar)
-							c.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
-						else
-							b.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
-						break;
 	
+					case "DriverProfile":
+						c = new Car();						
+						break;
+						
+					case "name:":
+						c.setName(name[1]);
+						break;
+						
 					case "maxSpeed:":
 						c.setMaxSpeed(Float.parseFloat(name[1]));
 						break;
@@ -232,10 +247,6 @@ public class Controller{
 						c.setColor(col);
 						break;
 	
-					case "actualSpeed:":
-						c.setCurrentSpeed(Float.parseFloat(name[1]));
-						break;
-	
 					case "prefSpeed:":
 						c.getDriver().setPrefSpeed(Float.parseFloat(name[1]));
 						break;
@@ -246,8 +257,43 @@ public class Controller{
 						
 					case "safetyGap:":
 						c.getDriver().setSafetyGap(Float.parseFloat(name[1]));
+						hw.addDriverProfile(c);
+						break;
+						
+					case "Car":
+						isCar = true;
+						c = new Car();
+						c.id = Integer.parseInt(name[1]);
+						break;
+						
+					case "Block":
+						isCar = false;
+						b = new Block();
+						b.id = Integer.parseInt(name[1]);
+						break;
+						
+					case "profile:":
+						c.setDriverProfile(name[1]);
+						break;
+						
+					case "position:":
+						if(isCar)
+							c.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
+						else
+							b.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
+						break;
+	
+					case "actualSpeed:":
+						c.setCurrentSpeed(Float.parseFloat(name[1]));
 						hw.getRoadObjects().add(c);
-						break;						
+						break;
+						
+					case "lane:":
+						if(isCar)
+							c.setLane(Integer.parseInt(name[1]));
+						else
+							b.setLane(Integer.parseInt(name[1]));
+						break;
 	
 					case "duration:":
 						b.duration =  Float.parseFloat(name[1]);
@@ -264,6 +310,7 @@ public class Controller{
 					}
 				}
 			}
+			w.setProfilesPanel();
 		}
 	}
 
@@ -354,13 +401,29 @@ public class Controller{
 	private Car newDriverProfile(String id) {
 		Car c = new Car();
 		c.id = Integer.parseInt(id);
-		RoadObject.count = 0;
 		return c;
 	}
 
 	public void restart() {
 		Road road = w.getRoad();
-		this.hw = new HighWay(road, 50);
+		this.hw = new HighWay(road, getTimeWarp());
+	}
+
+	public float getNewCarTime() {
+		return newCarTime;
+	}
+
+	public void setNewCarTime(float newCarTime) {
+		this.newCarTime = newCarTime;
+	}
+
+	public float getTimeWarp() {
+		return timeWarp;
+	}
+
+	public void setTimeWarp(float f) {
+		this.timeWarp = f;
+		this.hw.setTimeWarp(f);
 	}
 
 }

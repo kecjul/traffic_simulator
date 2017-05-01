@@ -62,16 +62,16 @@ public class Surface extends JPanel{
 				g2d.setColor(((Car) roadObject).getColor()); 
         		g2d.fillOval((int)pos.getX() - carSize/2, (int)pos.getY() - carSize/2, carSize, carSize);
         		
-        		if(((Car) roadObject).getColor() == Color.BLUE)
+        		if(Color.BLUE.equals(((Car) roadObject).getColor()))
 					g2d.setColor(new Color(255, 255, 255)); 
         		else
 					g2d.setColor(new Color(0, 0, 0)); 
         		g2d.drawString(Integer.toString(roadObject.id), (int)(pos.getX()- textWidth/2), (int)(pos.getY()+ fm.getMaxAscent() / 2));
 			}else if(roadObject instanceof Block){
-				g2d.setColor(new Color(255, 0, 0));
+				g2d.setColor(new Color(0, 0, 0));
         		g2d.fillOval((int)pos.getX() - blockSize/2, (int)pos.getY() - blockSize/2, blockSize, blockSize);
         		
-				g2d.setColor(new Color(0, 0, 0)); 
+				g2d.setColor(new Color(255, 255, 255)); 
         		g2d.drawString(Integer.toString(roadObject.id), (int)(pos.getX()- textWidth/2), (int)(pos.getY()+ fm.getMaxAscent() / 2));
 			
 			} else{

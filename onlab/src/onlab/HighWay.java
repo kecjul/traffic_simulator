@@ -4,16 +4,19 @@ import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
+import javax.swing.JLabel;
 
 import onlab.Driver.Status;
+import onlab.Util.Direction;
 
 public class HighWay {
 	private float pixelLenght = 0;
 	private float kmLenght = 5;
 	private static ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
-	private static Road road;
-	private static ArrayList<Car> driverProfiles = new ArrayList<Car>();;
-	private float timeLapse = 100;
+	public static Road road;
+	private static ArrayList<Car> driverProfiles = new ArrayList<Car>();
+	private static ArrayList<Float> driverProfilesPercentages = new ArrayList<Float>();
+	private float timeWarp = 100;
 	
 	HighWay(float lenght) {
 		this.pixelLenght = lenght;
@@ -23,8 +26,9 @@ public class HighWay {
 		this.roadObjects = new ArrayList<RoadObject>();
 		RoadObject.count = 0;
 		this.road = road;
-		setTimeLapse(tl);
+		setTimeWarp(tl);
 		setLenght((float) (road.getRectPartSize()*2 + road.getOvalPartSize()*Math.PI/2));
+		
 	}
 
 	public float getLenght() {
@@ -42,12 +46,16 @@ public class HighWay {
 		this.roadObjects = roadObjects;
 	}
 
-	public float getTimeLapse() {
-		return timeLapse;
+	public float getTimeWarp() {
+		return timeWarp;
 	}
 
-	public void setTimeLapse(float timeLapse) {
-		this.timeLapse = timeLapse;
+	public void setTimeWarp(float timeWarp) {
+		this.timeWarp = timeWarp;
+	}
+	
+	public int getLaneCount(){
+		return road.getLaneCount();
 	}
 
 	/* 
@@ -132,9 +140,9 @@ public class HighWay {
 
 	public void newCar() {
 		int index = getRoadObjects().size();
-		int profileIndex = index % driverProfiles.size();
+		int profileIndex = index % getDriverProfiles().size();
 		int laneIndex = (index % road.getLaneCount()) + 1;
-		getRoadObjects().add(new Car(road.getStartPosition(), driverProfiles.get(profileIndex), laneIndex));
+		getRoadObjects().add(new Car(road.getStartPosition(), getDriverProfiles().get(profileIndex), laneIndex));
 	}
 
 	/* 
@@ -164,11 +172,27 @@ public class HighWay {
 	static public RoadObject getSightForward(Car asker, int lane) {
 		RoadObject result = null;
 		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
-			result = getSightInOvalPart(asker, lane, Util.Direction.FORWARD);
+			result = getSightInOvalPart(asker, lane, Util.Direction.FORWARD);			
 		} else {
 			result = getSightInRectPart(asker, lane, Util.Direction.FORWARD);
 		}
 		return result;
+	}
+	
+	public static Point2D.Float getBorderPoint(Point2D.Float position, int lane, Direction dir) {
+		Point2D.Float north = new Point2D.Float(road.getBorderPoint(), road.getBorderSize() + (lane-1)*road.getLaneSize() + road.getLaneSize()/2);
+		Point2D.Float south = new Point2D.Float(road.getBorderPoint(), road.getBorderSize() + road.getOvalPartSize() - (lane-1)*road.getLaneSize() - road.getLaneSize()/2);
+		if(position == north || position == south){
+			return null;
+		}else if((isROInOvalPart(position) && dir == Util.Direction.BACKWARD)
+				|| (!isROInOvalPart(position) && isROInUpperRectPart(position) && dir == Util.Direction.FORWARD)){
+			return north;
+		} else if((isROInOvalPart(position) && dir == Util.Direction.FORWARD)
+				|| (!isROInOvalPart(position) && !isROInUpperRectPart(position) && dir == Util.Direction.BACKWARD)){
+			return south;
+		} else {
+			return null;
+		}
 	}
 	
 
@@ -197,6 +221,30 @@ public class HighWay {
 		if (result != null && getDistanceFromAngle(minAngle) >= asker.getRange()) {
 			result = null;
 		}
+		
+		if(result == null){
+			result = getFurtherSight(asker, lane, dir);
+		}
+		
+		return result;
+	}
+	
+	private static RoadObject getFurtherSight(Car asker, int lane, Util.Direction dir){
+		RoadObject result = null;
+		Point2D.Float bp = getBorderPoint(asker.getPosition(), lane, dir);
+		if(bp != null){
+			float remainder = asker.getRange() - Util.getDistance(asker.getPosition(), bp);
+			if(remainder > 0 && remainder < asker.getRange()){
+				Car temp = asker.clone();
+				temp.setPosition(bp);
+				temp.setRange(remainder);
+				if(isROInOvalPart(asker.getPosition())){
+					result = getSightInRectPart(temp, lane, dir);
+				} else {
+					result = getSightInOvalPart(temp, lane, dir);
+				}
+			}
+		}
 		return result;
 	}
 
@@ -212,14 +260,14 @@ public class HighWay {
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
 		for (RoadObject roadObject : ros) {
 			if(asker != roadObject){
-				if(isROInUpperRectPart(asker) && isROInUpperRectPart(roadObject) 
+				if(isROInUpperRectPart(asker.getPosition()) && isROInUpperRectPart(roadObject.getPosition()) 
 						&& isROOnLeftSide(asker, roadObject)){				
 					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
 					if(distance < minDistance && roadObject.getLane() == lane){
 						minDistance = distance;
 						result = roadObject;
 					}				
-				} else if(!isROInUpperRectPart(asker) && !isROInUpperRectPart(roadObject)
+				} else if(!isROInUpperRectPart(asker.getPosition()) && !isROInUpperRectPart(roadObject.getPosition())
 						&& !isROOnLeftSide(asker, roadObject)){
 					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
 					if(distance < minDistance && roadObject.getLane() == lane){
@@ -228,7 +276,10 @@ public class HighWay {
 					}
 				}	
 			}
-		} 		
+		}
+		if(result == null){
+			result = getFurtherSight(asker, lane, dir);
+		}
 		return result;
 	}
 	
@@ -246,10 +297,10 @@ public class HighWay {
 				thisCar.getDriver().setStatus(Status.DRIVING);
 			}
 		}		
-		if(thisCar.getPosition().x < road.getBorderPoint()){
-			newPosition = ovalPosition(thisCar.getPosition(), thisCar.getAdvance(timeLapse), thisCar.getLane(), status);
+		if(isROInOvalPart(thisCar.getPosition())){
+			newPosition = ovalPosition(thisCar.getPosition(), thisCar.getAdvance(timeWarp), thisCar.getLane(), status);
 		} else {
-			newPosition = rectPosition(thisCar.getPosition(), thisCar.getAdvance(timeLapse), thisCar.getLane(), status);
+			newPosition = rectPosition(thisCar.getPosition(), thisCar.getAdvance(timeWarp), thisCar.getLane(), status);
 		}		
 		thisCar.setPosition(newPosition);
 	}
@@ -262,13 +313,13 @@ public class HighWay {
 			lane--;
 		}
 		if(thisCar.getPosition().x < road.getBorderPoint()){
-			if(Util.getDistance(getCirclePoint(thisCar.getPosition(), lane), thisCar.getPosition()) < kmToPixel(thisCar.getAdvance(timeLapse))){
+			if(Util.getDistance(getCirclePoint(thisCar.getPosition(), lane), thisCar.getPosition()) < kmToPixel(thisCar.getAdvance(timeWarp))){
 				return true;
 			}
 		} else {
-			System.out.println("ychange " + getYChange(kmToPixel(thisCar.getAdvance(timeLapse))));
+			System.out.println("ychange " + getYChange(kmToPixel(thisCar.getAdvance(timeWarp))));
 			System.out.println("needed " + Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)));
-			if(Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)) < getYChange(kmToPixel(thisCar.getAdvance(timeLapse)))){
+			if(Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)) < getYChange(kmToPixel(thisCar.getAdvance(timeWarp)))){
 				return true;
 			}
 		}
@@ -280,7 +331,8 @@ public class HighWay {
 		float plusAngle = getAngleFromAdvance(kmToPixel(advance), lane);
 		if(status == Status.CHANGELEFT || status == Status.CHANGERIGHT ){
 			//TODO
-			plusAngle = (float) (plusAngle * (kmToPixel(advance)/Math.sqrt(Util.square(kmToPixel(advance))+Util.square(road.getLaneSize()))));
+			float pixelAdvance = kmToPixel(advance);
+			plusAngle = (float) (plusAngle * (pixelAdvance/getXChange(pixelAdvance)));
 		}
 		angle += plusAngle;
 		angle%=360;
@@ -306,7 +358,7 @@ public class HighWay {
 			yChange = getYChange(kmToPixel(advance));
 		} 
 		
-		if(isPosInUpperRectPart(position)){
+		if(isROInUpperRectPart(position)){
 			xChange = xChange * -1;
 			yChange = yChange * -1;
 		}
@@ -398,8 +450,15 @@ public class HighWay {
 
 	//------------//
 	
-	private static boolean isROInUpperRectPart(RoadObject asker) {
-		if(asker.getPosition().y < (road.getOvalPartSize()/2 + road.getBorderSize())){
+	private static boolean isROInUpperRectPart(Point2D.Float position) {
+		if(position.y < (road.getOvalPartSize()/2 + road.getBorderSize())){
+			return true;
+		}
+		return false;
+	}	
+	
+	private static boolean isROInOvalPart(Point2D.Float position) {
+		if(position.x  < road.getBorderPoint()){
 			return true;
 		}
 		return false;
@@ -412,16 +471,10 @@ public class HighWay {
 		return false;
 	}
 
-	private boolean isPosInUpperRectPart(Point2D.Float position) {
-		if(position.y < (road.getOvalPartSize()/2 + road.getBorderSize())){
-			return true;
-		}
-		return false;
-	}
 	
 	private float getRectY(Point2D.Float position, int lane) {
 		float result = 0;
-		if(isPosInUpperRectPart(position)){
+		if(isROInUpperRectPart(position)){
 			result = (road.getBorderSize() + (lane-1)*road.getLaneSize() + road.getLaneSize()/2);
 		} else {
 			result = (road.getBorderSize() + road.getOvalPartSize() - (lane-1)*road.getLaneSize() - road.getLaneSize()/2);
@@ -464,20 +517,20 @@ public class HighWay {
 	}
 
 	public static String[] getDriverProfileNames() {
-		if(!driverProfiles.isEmpty()){
-			String[] names = new String[driverProfiles.size()];
+		if(!getDriverProfiles().isEmpty()){
+			String[] names = new String[getDriverProfiles().size()];
 			for (int i = 0; i < names.length; i++) {
-				names[i] = driverProfiles.get(i).getName();
+				names[i] = getDriverProfiles().get(i).getName();
 			}				
 			return names;
 		} else {
-			String[] s = {"asd"};
+			String[] s = {"none"};
 			return s;
 		}
 	}
 
 	public static Car getDriverProfile(String profile) {
-		for(Car dp : driverProfiles){
+		for(Car dp : getDriverProfiles()){
 			if(profile.equals(dp.getName())){
 				return dp;
 			}
@@ -486,6 +539,98 @@ public class HighWay {
 	}
 
 	public void addDriverProfiles(ArrayList<Car> loadDefaultDriverProfiles) {
-		driverProfiles = loadDefaultDriverProfiles;		
+		setDriverProfiles(loadDefaultDriverProfiles);	
+		setDriverProfilesPercentages();		
+	}
+
+	public void addDriverProfile(Car c){
+		addDriverProfile(c.getName(), c.getMaxAcc(), c.getMaxAcc(), c.getColor(), 
+				c.getDriver().getPrefSpeed(), c.getDriver().getRangeOfView(), c.getDriver().getSafetyGap());
+	}
+	
+	public void addDriverProfile(String name, Float maxSpeed, Float maxAcc, Color color, 
+			Float prefSpeed, Float range, Float safetyGap) {
+		Car c = new Car();
+		c.setName(name);
+		c.setMaxSpeed(maxSpeed);
+		c.setMaxAcc(maxAcc);
+		c.setColor(color);
+		Driver d = new Driver(prefSpeed, range, safetyGap);
+		c.setDriver(d);
+		getDriverProfiles().add(c);
+		setDriverProfilesPercentages();
+	}
+
+	public static ArrayList<Float> getDriverProfilesPercentages() {
+		return driverProfilesPercentages;
+	}
+
+	public static void setDriverProfilesPercentages(ArrayList<Float> driverProfilesPercentages) {
+		HighWay.driverProfilesPercentages = driverProfilesPercentages;
+	}
+	
+	public static void setDriverProfilesPercentages(){
+		driverProfilesPercentages = new ArrayList<>();
+		for (Car car : getDriverProfiles()) {
+			driverProfilesPercentages.add((1f/getDriverProfiles().size())*100);
+		}
+	}
+
+	public static void setDriverProfilesPercentage(int id, Float p) {	
+		float change = (driverProfilesPercentages.get(id) - p) / (driverProfilesPercentages.size()-1);
+				
+		ArrayList<Float> temp = new ArrayList<>();
+		for (int i = 0; i < driverProfilesPercentages.size(); i++) {
+			if(i==id){
+				temp.add(p);
+			} else {
+				temp.add(driverProfilesPercentages.get(i) + change);
+			}
+		}
+		
+		setDriverProfilesPercentages(temp);
+		
+		float teszt = 0;
+		for (Float float1 : temp) {
+			teszt = teszt + float1;
+		}
+		System.out.println("TESZT: " + teszt);
+	}
+	
+	public static Integer[] getDriverProfilePercentages() {
+		if(!driverProfilesPercentages.isEmpty()){
+			Integer[] percentages = new Integer[driverProfilesPercentages.size()];
+			for (int i = 0; i < percentages.length; i++) {
+				percentages[i] = (int) driverProfilesPercentages.get(i).shortValue();
+			}				
+			return percentages;
+		} else {
+			Integer[] p = {0};
+			return p;
+		}
+	}
+
+	public static Color[] getDriverProfileColors() {
+		if(!getDriverProfiles().isEmpty()){
+			Color[] colors = new Color[getDriverProfiles().size()];
+			for (int i = 0; i < colors.length; i++) {
+				colors[i] = getDriverProfiles().get(i).getColor();
+			}				
+			return colors;
+		} else {
+			Color[] s = {Color.WHITE};
+			return s;
+		}
+	}
+
+	public static ArrayList<Car> getDriverProfiles() {
+		return driverProfiles;
+	}
+
+	public static void setDriverProfiles(ArrayList<Car> driverProfiles) {
+		HighWay.driverProfiles = new ArrayList<>();
+		if(driverProfiles != null){
+			HighWay.driverProfiles=driverProfiles;
+		}
 	}
 }
