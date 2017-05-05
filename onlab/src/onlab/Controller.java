@@ -10,6 +10,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
+
 public class Controller{
 
 	public static void main(String[] args) {
@@ -31,14 +33,17 @@ public class Controller{
 	private float prevTime;
 	
 	private float deltaCarTime;
-	private float newCarTime = 500.0f;
+	private float newCarTime = 5000.0f;
 	
-	private float timeWarp = 20;
+	private float timeWarp = 20f;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
 	Controller(){
 		this.w = new Window(this);
+		w.setExtendedState(JFrame.MAXIMIZED_BOTH);
+//		w.surface.screenWidth = w.getBounds().width;
+//		w.surface.screenHeight = w.getBounds().height;
 		Road road = w.initUI();
 		this.hw = new HighWay(road, getTimeWarp());
 		this.hw.addDriverProfiles(LoadDefaultDriverProfiles());
@@ -57,25 +62,25 @@ public class Controller{
 		//tickTime = 10 ms
 		if(deltaTime>=tickTime){
 			if(s == Status.RUNNING){
-				if(deltaCarTime>=getNewCarTime()){
+				if(deltaCarTime>=getNewCarTime()/getTimeWarp()){
 					hw.newCar();
 					deltaCarTime = 0;
 				}
 				hw.move();
 				w.setLog();
 				if(hw.getRoadObjects() != null){
-					String[] names = new String[RoadObject.count];
-					Float[] datas = new Float[RoadObject.count];
-					Color[] colors = new Color[RoadObject.count];
+					ArrayList<String> names = new ArrayList<>();
+					ArrayList<Float> datas = new ArrayList<>();
+					ArrayList<Color> colors = new ArrayList<>();
 					for (int i = 0; i < hw.getRoadObjects().size(); i++) {
 						if(hw.getRoadObjects().get(i) instanceof Car){
 							Car c = (Car) hw.getRoadObjects().get(i);
-							names[c.id-1] = "Car " + c.id;
-							datas[c.id-1] = c.getCurrentSpeed();
-							colors[c.id-1] = c.getColor();
+							names.add("Car " + c.id);
+							datas.add(c.getCurrentSpeed());
+							colors.add(c.getColor());
 						}
 					}
-//					w.newChartData(names, datas, colors);
+					w.newChartData(names.toArray(), datas.toArray(), colors.toArray());
 				}
 			}
 			w.setRoadObjects(hw.getRoadObjects());
@@ -103,6 +108,8 @@ public class Controller{
 			s = Status.PAUSED;
 		}else{
 			s = Status.RUNNING;
+			deltaCarTime = 0;
+			deltaTime=0;
 		}
 	}
 
@@ -135,6 +142,7 @@ public class Controller{
 					sb.append("position: ").append(Double.toString(c.getPosition().getX())).append(" ").append(Double.toString(c.getPosition().getY())).append(System.lineSeparator());					
 					sb.append("actualSpeed: ").append(Float.toString(c.getCurrentSpeed())).append(System.lineSeparator());					
 					sb.append("lane: ").append(c.getLane()).append(System.lineSeparator());					
+					sb.append("status: ").append(c.getDriver().getStatus().toString()).append(System.lineSeparator());					
 				}
 				if(roadObject instanceof Block){
 					Block b = (Block)roadObject;
@@ -294,6 +302,10 @@ public class Controller{
 						else
 							b.setLane(Integer.parseInt(name[1]));
 						break;
+						
+					case "status:":
+						c.getDriver().setStatus(getStatus(name[1]));
+						break;
 	
 					case "duration:":
 						b.duration =  Float.parseFloat(name[1]);
@@ -312,6 +324,15 @@ public class Controller{
 			}
 			w.setProfilesPanel();
 		}
+	}
+	
+	private Driver.Status getStatus(String string){
+		for (Driver.Status s : Driver.Status.values()) {
+			if(string.equals(s.toString())){
+				return s;
+			}
+		}
+		return null;
 	}
 
 	public ArrayList<Car> LoadDefaultDriverProfiles(){

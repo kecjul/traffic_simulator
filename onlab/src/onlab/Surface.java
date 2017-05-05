@@ -24,11 +24,11 @@ public class Surface extends JPanel{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
+	public ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
 	private static int laneCount = 3;
 	
 	float size = 450;
-	static int carSize = 20;
+	static int carSize = 17;
 	static int blockSize = 15;
 	Color grass = new Color(0, 100, 0);
 	Color concrete = new Color(100, 100, 100);
@@ -38,7 +38,7 @@ public class Surface extends JPanel{
 	int screenHeight = screenSize.height;
 
 	int maxWidth = screenWidth - 280;
-	int maxHeight = screenHeight - 200;
+	int maxHeight = screenHeight - 250;
 	
 	int firstBorder = 25;
 	int laneSize = 25;
@@ -53,11 +53,15 @@ public class Surface extends JPanel{
 	private void doDrawing(Graphics g) {
 		drawLanes(g);
 		Graphics2D g2d = (Graphics2D) g;
+		drawRoadObjects(g, g2d);
 		
+	}
+	
+	private void drawRoadObjects(Graphics g, Graphics2D g2d) {
 		for (RoadObject roadObject : roadObjects) {
 			Point2D.Float pos = roadObject.getPosition();
     		FontMetrics fm = g.getFontMetrics();
-            double textWidth = fm.getStringBounds(Integer.toString(roadObject.id), g).getWidth();
+            double textWidth = fm.getStringBounds(Integer.toString(roadObject.id), g).getWidth()/2.2;
 			if(roadObject instanceof Car){
 				g2d.setColor(((Car) roadObject).getColor()); 
         		g2d.fillOval((int)pos.getX() - carSize/2, (int)pos.getY() - carSize/2, carSize, carSize);
@@ -66,19 +70,20 @@ public class Surface extends JPanel{
 					g2d.setColor(new Color(255, 255, 255)); 
         		else
 					g2d.setColor(new Color(0, 0, 0)); 
-        		g2d.drawString(Integer.toString(roadObject.id), (int)(pos.getX()- textWidth/2), (int)(pos.getY()+ fm.getMaxAscent() / 2));
+        		g2d.drawString(Integer.toString(roadObject.id), (int)(pos.getX()- textWidth), (int)(pos.getY()+ fm.getMaxAscent() / 2));
 			}else if(roadObject instanceof Block){
 				g2d.setColor(new Color(0, 0, 0));
         		g2d.fillOval((int)pos.getX() - blockSize/2, (int)pos.getY() - blockSize/2, blockSize, blockSize);
         		
 				g2d.setColor(new Color(255, 255, 255)); 
-        		g2d.drawString(Integer.toString(roadObject.id), (int)(pos.getX()- textWidth/2), (int)(pos.getY()+ fm.getMaxAscent() / 2));
+        		g2d.drawString(Integer.toString(roadObject.id), (int)(pos.getX()- textWidth), (int)(pos.getY()+ fm.getMaxAscent() / 2));
 			
 			} else{
 				System.out.println("invalid object");
 			}
 		}
 	}
+	
 	private void drawLanes(Graphics g){
 		Graphics2D g2d = (Graphics2D) g;
 		Graphics2D g2dDashed = (Graphics2D) g;
@@ -264,13 +269,13 @@ public class Surface extends JPanel{
 		return laneCount;
 	}
 	public static void setLaneCount(int laneCount) {
-		if(laneCount  > 0 && laneCount < 6){
+		if(laneCount  > 0 && laneCount <= 6){
 			Surface.laneCount = laneCount;
 		}
 	}
 	
 	public Point2D.Float getStartPosition() {
-		Point2D.Float point = new Point2D.Float(maxWidth, firstBorder);
+		Point2D.Float point = new Point2D.Float(maxWidth, firstBorder+laneSize/2);
 		return point;
 	}
 	

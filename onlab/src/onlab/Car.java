@@ -11,13 +11,16 @@ public class Car extends RoadObject{
 	private Color color = Color.GREEN;
 	private float currentSpeed;
 	private Driver driver;
-	private LinkedList<RoadObject> sights = new LinkedList<RoadObject>();
-	private LinkedList<Float> times = new LinkedList<Float>();
 	private String name;
 
-	Car(){setDriver(new Driver());}
+
+	Car(){
+		setSize(20);
+		setDriver(new Driver());
+	}
 	
 	Car(Point2D.Float startPosition){
+		setSize(20);
 		setPosition(startPosition);
 		setDriver(new Driver());
 		count++;
@@ -28,6 +31,7 @@ public class Car extends RoadObject{
 	Car(Point2D.Float startPosition, float maxSpeed, float maxAcc, Color color, float prefSpeed, float range, float safety){
 		count++;
 		this.id = count;
+		setSize(20);
 		this.setPosition(startPosition);
 		this.setMaxSpeed(maxSpeed);
 		this.setMaxAcc(maxAcc);
@@ -39,26 +43,19 @@ public class Car extends RoadObject{
 	public Car(java.awt.geom.Point2D.Float startPosition, Car car, int lane) {
 		count++;
 		id = count;
+		setSize(20);
 		setPosition(startPosition);
 		setDriverProfile(car);
 		setLane(lane);
 	}
 
 	public void drive() {
-		float acc = 0;
-		RoadObject inSight = HighWay.getSightForward(this, getLane());
-		addSights(inSight);
-		addTimes((float) System.nanoTime());
-		if ((getTimes().peekLast() - getTimes().peekFirst()) > secToNano(getDriver().getReactionTime())) {
-			getTimes().pop();
-			acc = getDriver().drive(getSights().pop(), this);
-		}
-		// (100/getMaxAcc) ->km/h/s, (100/getMaxAcc)/100 ->km/h/tick  
-		if (acc > 1/getMaxAcc()) {
-			acc = 1/getMaxAcc();
-		}
+		float change = 0;
+		RoadObject inSight = HighWay.getSightForward(this, getLane(), true);
+		change = getDriver().drive(inSight, this);
+		change = getMaxChange(change);
 		
-		setCurrentSpeed(getCurrentSpeed() + acc);
+		setCurrentSpeed(getCurrentSpeed() + change);
 		
 		if (getCurrentSpeed() <= 0.0001){
 			setCurrentSpeed(0);
@@ -66,8 +63,16 @@ public class Car extends RoadObject{
 		}
 		if (getCurrentSpeed() > getMaxSpeed()){
 			setCurrentSpeed(getMaxSpeed());
-			getDriver().s = Status.DRIVING;
+//			getDriver().s = Status.DRIVING;
 		}		
+	}
+	
+	public float getMaxChange(float change){
+		// (100/getMaxAcc) ->km/h/s, (100/getMaxAcc)/100 ->km/h/tick			  
+		if (change > 1/getMaxAcc()) {
+			change = 1/getMaxAcc();
+		}
+		return change;
 	}
 	
 	public RoadObject getSight(Util.Direction dirLR, Util.Direction dirFB){
@@ -80,7 +85,7 @@ public class Car extends RoadObject{
 		}
 		
 		if(dirFB == Util.Direction.FORWARD){
-			result = HighWay.getSightForward(this, lane);
+			result = HighWay.getSightForward(this, lane, false);
 		} else if(dirFB == Util.Direction.BACKWARD){
 			result = HighWay.getSightBackward(this, lane);			
 		}		
@@ -143,30 +148,6 @@ public class Car extends RoadObject{
 		this.driver = driver;
 	}
 
-	public LinkedList<RoadObject> getSights() {
-		return sights;
-	}
-
-	public void setSights(LinkedList<RoadObject> sights) {
-		this.sights = sights;
-	}
-	
-	public void addSights(RoadObject ro) {
-		sights.add(ro);
-	}
-
-	public LinkedList<Float> getTimes() {
-		return times;
-	}
-
-	public void setTimes(LinkedList<Float> times) {
-		this.times = times;
-	}	
-	
-	public void addTimes(Float time) {
-		times.add(time);
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -175,6 +156,10 @@ public class Car extends RoadObject{
 	}
 
 	public void setDriverProfile(Car car) {
+		if(HighWay.getRoadObjects().contains(this)){
+			HighWay.decrementCount(HighWay.getDriverProfileIndex(this.getName()));
+			HighWay.incrementCount(HighWay.getDriverProfileIndex(car.getName()));			
+		}
 		this.setName(car.getName());
 		this.setMaxSpeed(car.getMaxSpeed());
 		this.setMaxAcc(car.getMaxAcc());

@@ -51,4 +51,8 @@ public class Util {
 	public static float getDistance(Point2D.Float a, Point2D.Float b) {
 		return (float) Math.sqrt(square(b.x - a.x) + square(b.y - a.y));
 	}
+
+	public static float pitagoras(float a, float b) {
+		return (float) Math.sqrt(square(a) + square(b));
+	}
 }

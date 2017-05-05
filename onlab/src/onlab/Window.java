@@ -40,7 +40,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	JLabel newObjectTitle, carTitle, driverTitle, blockTitle, aditional, selectedTitle, selectedCarObject, selectedBlockObject;
 	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLenght;
 	JLabel lLanes, ldpChooser, scolorChooser, lLaneSpan, lcarName, lNewCarTimer, lTimeWarp;
-	JLabel lDPTitle, lIDTitle, lNameTitle, lPercentageTitle, lColorTitle;
+	JLabel lDPTitle, lIDTitle, lNameTitle, lPercentageTitle, lColorTitle, lcarCount;
 	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, 
 			tblockDuration, thwLenght, stblockDuration, sthwLengh;
 	JTextField tcarName, tNewCarTimer, tTimeWarp;
@@ -77,7 +77,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	Dimension logMinimumSize = new Dimension(280, screenHeight);
 	int settingsSplitPositionY = screenWidth - 280;
 	int profileSplitPositionY = settingsSplitPositionY - 250;
-	int selectSplitPositionX = screenHeight - 200;
+	int selectSplitPositionX = screenHeight - 250;
 	int logSplitPositionX = screenHeight - 200;
 		
 	public Window(Controller c) {
@@ -85,8 +85,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	}
 
 	public Road initUI() {
-		
-		surface = new Surface();
+		surface = new Surface();		
 		surface.addMouseListener(this);
 		settings = new JPanel();
 		settings.setLayout(new BoxLayout(settings, BoxLayout.Y_AXIS));
@@ -133,11 +132,11 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		
 		setTitle("Traffic jam simulator");
 		
-		setMinimumSize(new Dimension(700, 650));
-		setSize(screenSize);
-		setLocationRelativeTo(null);
+//		setMinimumSize(new Dimension(700, 650));
+//		setSize(screenSize);
+//		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setResizable(false);
+//		setResizable(false);
 		
 		return getRoad();
 	}
@@ -368,22 +367,22 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		SpringLayout hwLayout = new SpringLayout();
 		highWay = new JPanel(hwLayout);	
 		aditional =  new JLabel("Aditional options: ");
-//XXX
+
 		lNewCarTimer = new JLabel("New car timer: ");
-		tNewCarTimer = new JTextField(10);
-		tNewCarTimer.setText("500");
+		tNewCarTimer = new JTextField(10);		
+		tNewCarTimer.setText(Float.toString(c.getNewCarTime()));
 		tNewCarTimer.setToolTipText("ms");
 		tNewCarTimer.addActionListener(this);
 
 		lTimeWarp = new JLabel("Time warp: ");
 		tTimeWarp = new JTextField(10);
-		tTimeWarp.setText("20");
+		tTimeWarp.setText(Float.toString(c.getTimeWarp()));
 		tTimeWarp.setToolTipText("how much faster should the time be");
 		tTimeWarp.addActionListener(this);
 		
 		lLanes = new JLabel("Lanes: ");
 		cbLanes = new JComboBox<Integer>(lanes);
-		cbLanes.setSelectedIndex(3);
+		cbLanes.setSelectedIndex(2);
 		cbLanes.setToolTipText("Number of lanes");
 		cbLanes.addItemListener(this);
 		
@@ -397,6 +396,8 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		bSave.addActionListener(this);
 		bLoad = new JButton("Load");
 		bLoad.addActionListener(this);
+		
+		lcarCount = new JLabel("There are " + HighWay.getRoadObjects().size() + " cars on the highway.");
 
 		highWay.add(aditional);
 		highWay.add(lNewCarTimer);
@@ -410,6 +411,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		highWay.add(bChart);
 		highWay.add(bSave);
 		highWay.add(bLoad);
+		highWay.add(lcarCount);
 		hwLayout.putConstraint(SpringLayout.WEST, aditional, 5, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, aditional, 5, SpringLayout.NORTH, highWay);	
 
@@ -437,9 +439,12 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		hwLayout.putConstraint(SpringLayout.NORTH, bSave, 35, SpringLayout.NORTH, bPause);
 		hwLayout.putConstraint(SpringLayout.WEST, bLoad, 125, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bLoad, 35, SpringLayout.NORTH, bPause);
-		
+
 		hwLayout.putConstraint(SpringLayout.WEST, bChart, 70, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bChart, 35, SpringLayout.NORTH, bSave);
+		
+		hwLayout.putConstraint(SpringLayout.WEST, lcarCount, 5, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.NORTH, lcarCount, 50, SpringLayout.NORTH, bChart);
 		
 		settings.add(combo);
 		settings.add(options);
@@ -613,29 +618,29 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	    
 	    JPanel content = new JPanel(new BorderLayout());
         content.add(chartPanel);
-        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
         chartFrame.setContentPane(content);
         
         
 		 
 	}
-	public void newChartData(String[] name, Float[] data, Color[] color){
+	public void newChartData(Object[] name, Object[] data, Object[] color){
 		Millisecond now = new Millisecond();
 		for (int i = 0; i < name.length; i++) {
 			if( name[i] != null){
 				if(i >= series.size()){
-					series.add(new TimeSeries(name[i]));
+					series.add(new TimeSeries((String)name[i]));
 					dataset.add(new TimeSeriesCollection(series.get(i)));
 					plot.setDataset(i, dataset.get(i));
 					plot.setRenderer(i, new StandardXYItemRenderer());
-					plot.getRenderer().setSeriesPaint(i, color[i]);
+					plot.getRenderer().setSeriesPaint(i, (Color)color[i]);
 				}
-				if(!series.get(i).getKey().equals(name[i])){
-					series.get(i).setKey(name[i]);
-					plot.getRenderer().setSeriesPaint(i, color[i]);
+				if(!series.get(i).getKey().equals((String)name[i])){
+					series.get(i).setKey((String)name[i]);
+					plot.getRenderer().setSeriesPaint(i, (Color)color[i]);
 				}
-				series.get(i).add(now, data[i]);
-				System.out.println("plotColor: " + plot.getRenderer().getSeriesPaint(i) + " carColor: " + color[i]);
+				series.get(i).add(now, (Float)data[i]);
+//				System.out.println("plotColor: " + plot.getRenderer().getSeriesPaint(i) + " carColor: " + color[i]);
 				plot.getRenderer().getSeriesPaint(i);
 			}
 		}
@@ -650,6 +655,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	
 	public void setRoadObjects(ArrayList<RoadObject> ro){
 		surface.setRoadObjects(ro);
+		lcarCount.setText("There are " + ro.size() + " cars on the highway.");
 	}
 	
 	public void reFresh(){

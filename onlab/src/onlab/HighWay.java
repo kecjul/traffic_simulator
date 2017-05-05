@@ -16,6 +16,7 @@ public class HighWay {
 	public static Road road;
 	private static ArrayList<Car> driverProfiles = new ArrayList<Car>();
 	private static ArrayList<Float> driverProfilesPercentages = new ArrayList<Float>();
+	public static ArrayList<Integer> driverProfilesCount = new ArrayList<>();
 	private float timeWarp = 100;
 	
 	HighWay(float lenght) {
@@ -23,12 +24,12 @@ public class HighWay {
 	}
 
 	public HighWay(Road road, float tl) {
-		this.roadObjects = new ArrayList<RoadObject>();
+		this.roadObjects = new ArrayList<RoadObject>();		
 		RoadObject.count = 0;
 		this.road = road;
 		setTimeWarp(tl);
 		setLenght((float) (road.getRectPartSize()*2 + road.getOvalPartSize()*Math.PI/2));
-		
+		setDriverProfilesCount();
 	}
 
 	public float getLenght() {
@@ -63,7 +64,11 @@ public class HighWay {
 	 */
 	
 	public void deleteObject(RoadObject roadObject) {
+		if(roadObject instanceof Car){
+			decrementCount(getDriverProfileIndex(((Car)roadObject).getName()));
+		}
 		this.getRoadObjects().remove(roadObject);
+		
 	}
 	
 	public void addBlock(Point2D.Float click, int lane, float duration) {
@@ -139,10 +144,23 @@ public class HighWay {
 	}
 
 	public void newCar() {
+		int profileIndex = getBiggestDifference();		
 		int index = getRoadObjects().size();
-		int profileIndex = index % getDriverProfiles().size();
 		int laneIndex = (index % road.getLaneCount()) + 1;
-		getRoadObjects().add(new Car(road.getStartPosition(), getDriverProfiles().get(profileIndex), laneIndex));
+		Point2D.Float startPosition = getStartPosition(laneIndex);
+		if(getObject(startPosition) == null){
+			getRoadObjects().add(new Car(getStartPosition(laneIndex), getDriverProfiles().get(profileIndex), laneIndex));
+			incrementCount(profileIndex);			
+		}
+	}
+	
+	public RoadObject getObject(Point2D.Float newPoint){
+		for (RoadObject roadObject : roadObjects) {
+			if(Util.getDistance(newPoint, roadObject.getPosition()) < roadObject.getSize()){
+				return roadObject;
+			}
+		}	
+		return null;
 	}
 
 	/* 
@@ -154,7 +172,9 @@ public class HighWay {
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
 		ArrayList<RoadObject> deletables = new ArrayList<RoadObject>();
 		for (RoadObject roadObject : ros) {
-			if (roadObject instanceof Car) {
+			if(isOut(roadObject.getPosition())){
+				deletables.add(roadObject);
+			} else if (roadObject instanceof Car) {
 				Car thisCar = (Car) roadObject;
 				thisCar.drive();				
 				newCarPosition(thisCar);
@@ -169,12 +189,19 @@ public class HighWay {
 		deleteObjects(deletables);
 	}
 	
-	static public RoadObject getSightForward(Car asker, int lane) {
+	private boolean isOut(Point2D.Float position) {
+		if(position.x > road.getStartPosition().x){
+			return true;
+		}
+		return false;
+	}
+
+	static public RoadObject getSightForward(Car asker, int lane, boolean sameLane) {
 		RoadObject result = null;
-		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
-			result = getSightInOvalPart(asker, lane, Util.Direction.FORWARD);			
+		if(isROInOvalPart(asker.getPosition())){
+			result = getSightInOvalPart(asker, lane, Util.Direction.FORWARD, sameLane);			
 		} else {
-			result = getSightInRectPart(asker, lane, Util.Direction.FORWARD);
+			result = getSightInRectPart(asker, lane, Util.Direction.FORWARD, sameLane);
 		}
 		return result;
 	}
@@ -198,24 +225,29 @@ public class HighWay {
 
 	static public RoadObject getSightBackward(Car asker, int lane) {
 		RoadObject result = null;
-		if(asker.getPosition().x < road.getOvalPartSize()/2 + road.getBorderSize()){
-			result = getSightInOvalPart(asker, lane, Util.Direction.BACKWARD);
+		if(isROInOvalPart(asker.getPosition())){
+			result = getSightInOvalPart(asker, lane, Util.Direction.BACKWARD, false);
 		} else {
-			result = getSightInRectPart(asker, lane, Util.Direction.BACKWARD);
+			result = getSightInRectPart(asker, lane, Util.Direction.BACKWARD, false);
 		}
 		return result;
 	}
 
 	@SuppressWarnings("unchecked")
-	private static RoadObject getSightInOvalPart(Car asker, int lane, Util.Direction dir) {
+	private static RoadObject getSightInOvalPart(Car asker, int lane, Util.Direction dir, boolean sameLane) {
 		RoadObject result = null;
 		float minAngle = 360;
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
-		for (RoadObject roadObject : ros) {			
-			float angle = (getAngle(roadObject.getPosition(), asker.getLane()) + 360 - getAngle(asker.getPosition(), asker.getLane())) % 360;
-			if (angle < minAngle && asker != roadObject  && roadObject.getLane() == lane) {
-				minAngle = angle;
-				result = roadObject;
+		for (RoadObject roadObject : ros) {		
+			if((sameLane && isChangingHere(roadObject, lane)) || roadObject.getLane() == lane){
+				float angle = (getAngle(roadObject.getPosition(), asker.getLane()) + 360 - getAngle(asker.getPosition(), asker.getLane())) % 360;
+				if((angle < 180 && dir == Util.Direction.FORWARD) 
+						|| (angle > 180 && dir == Util.Direction.BACKWARD)){
+					if (angle < minAngle && asker != roadObject) {
+						minAngle = angle;
+						result = roadObject;
+					}
+				}
 			}
 		}
 		if (result != null && getDistanceFromAngle(minAngle) >= asker.getRange()) {
@@ -223,13 +255,13 @@ public class HighWay {
 		}
 		
 		if(result == null){
-			result = getFurtherSight(asker, lane, dir);
+			result = getFurtherSight(asker, lane, dir, sameLane);
 		}
 		
 		return result;
 	}
 	
-	private static RoadObject getFurtherSight(Car asker, int lane, Util.Direction dir){
+	private static RoadObject getFurtherSight(Car asker, int lane, Util.Direction dir, boolean sameLane){
 		RoadObject result = null;
 		Point2D.Float bp = getBorderPoint(asker.getPosition(), lane, dir);
 		if(bp != null){
@@ -239,9 +271,9 @@ public class HighWay {
 				temp.setPosition(bp);
 				temp.setRange(remainder);
 				if(isROInOvalPart(asker.getPosition())){
-					result = getSightInRectPart(temp, lane, dir);
+					result = getSightInRectPart(temp, lane, dir, sameLane);
 				} else {
-					result = getSightInOvalPart(temp, lane, dir);
+					result = getSightInOvalPart(temp, lane, dir, sameLane);
 				}
 			}
 		}
@@ -254,35 +286,55 @@ public class HighWay {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static RoadObject getSightInRectPart(Car asker, int lane, Util.Direction dir) {
+	private static RoadObject getSightInRectPart(Car asker, int lane, Util.Direction dir, boolean sameLane) {
 		RoadObject result = null;
-		float minDistance = road.getRectPartSize();
+		float minDistance = asker.getRange();
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
 		for (RoadObject roadObject : ros) {
 			if(asker != roadObject){
-				if(isROInUpperRectPart(asker.getPosition()) && isROInUpperRectPart(roadObject.getPosition()) 
-						&& isROOnLeftSide(asker, roadObject)){				
-					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
-					if(distance < minDistance && roadObject.getLane() == lane){
-						minDistance = distance;
-						result = roadObject;
-					}				
-				} else if(!isROInUpperRectPart(asker.getPosition()) && !isROInUpperRectPart(roadObject.getPosition())
-						&& !isROOnLeftSide(asker, roadObject)){
-					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
-					if(distance < minDistance && roadObject.getLane() == lane){
-						minDistance = distance;
-						result = roadObject;
+				if(isROInUpperRectPart(asker.getPosition()) && isROInUpperRectPart(roadObject.getPosition())) {
+					if((isROOnLeftSide(asker, roadObject) && dir == Util.Direction.FORWARD) 
+						|| (!isROOnLeftSide(asker, roadObject) && dir == Util.Direction.BACKWARD)){	
+						if((sameLane && isChangingHere(roadObject, lane)) || roadObject.getLane() == lane){
+							float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
+							if(distance < minDistance){
+								minDistance = distance;
+								result = roadObject;
+							}	
+						}
+					}
+				} else if(!isROInUpperRectPart(asker.getPosition()) && !isROInUpperRectPart(roadObject.getPosition())){
+					if((!isROOnLeftSide(asker, roadObject) && dir == Util.Direction.FORWARD) 
+						|| (isROOnLeftSide(asker, roadObject) && dir == Util.Direction.BACKWARD)){	
+						if((sameLane && isChangingHere(roadObject, lane)) || roadObject.getLane() == lane){
+							float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
+							if(distance < minDistance){
+								minDistance = distance;
+								result = roadObject;
+							}
+						}
 					}
 				}	
 			}
 		}
 		if(result == null){
-			result = getFurtherSight(asker, lane, dir);
+			result = getFurtherSight(asker, lane, dir, sameLane);
 		}
 		return result;
 	}
 	
+	private static boolean isChangingHere(RoadObject roadObject, int lane) {
+		if(roadObject instanceof Car){
+			Car car = (Car) roadObject;
+			if(car.getDriver().getStatus() == Status.CHANGELEFT && car.getLane() == (lane-1)){
+				return true;
+			} else if(car.getDriver().getStatus() == Status.CHANGERIGHT && car.getLane() == (lane+1)){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private void newCarPosition(Car thisCar) {
 		Point2D.Float newPosition;
 		Status status = thisCar.getDriver().getStatus();
@@ -317,8 +369,6 @@ public class HighWay {
 				return true;
 			}
 		} else {
-			System.out.println("ychange " + getYChange(kmToPixel(thisCar.getAdvance(timeWarp))));
-			System.out.println("needed " + Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)));
 			if(Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)) < getYChange(kmToPixel(thisCar.getAdvance(timeWarp)))){
 				return true;
 			}
@@ -488,16 +538,25 @@ public class HighWay {
 	
 	private void deleteObjects(ArrayList<RoadObject> roadObjects) {
 		for (RoadObject roadObject : roadObjects) {
+			if(roadObject instanceof Car){
+				decrementCount(getDriverProfileIndex(((Car)roadObject).getName()));
+			}
 			this.getRoadObjects().remove(roadObject);
 		}
 	}
 	
 	private float getXChange(float kmToPixel) {
-		return kmToPixel*(float) (Math.sin(Util.toRadian(45)));
+		return kmToPixel*(float) (Math.sin(Util.toRadian(60)));
 	}
 	
 	private float getYChange(float kmToPixel) {
-		return kmToPixel*(float) (Math.cos(Util.toRadian(45)));
+		return kmToPixel*(float) (Math.cos(Util.toRadian(60)));
+	}
+	
+	private Point2D.Float getStartPosition(int laneIndex) {
+		Float y = road.getStartPosition().y + (laneIndex-1)*road.getLaneSize();
+		Point2D.Float result = new Point2D.Float(road.getStartPosition().x, y);
+		return result;
 	}
 
 	public static boolean isInnerMostLane(int lane) {
@@ -507,10 +566,17 @@ public class HighWay {
 		return false;
 	}
 
+	public static boolean isOutterMostLane(int lane) {
+		if(lane == 1){
+			return true;
+		}
+		return false;
+	}
+
 	public static boolean isLaneToTheSide(Util.Direction dir, int lane) {
 		if(dir == Util.Direction.LEFT && !isInnerMostLane(lane)){
 			return true;
-		} else if(dir == Util.Direction.RIGHT && lane != 1){
+		} else if(dir == Util.Direction.RIGHT && !isOutterMostLane(lane)){
 			return true;
 		}
 		return false;
@@ -541,6 +607,7 @@ public class HighWay {
 	public void addDriverProfiles(ArrayList<Car> loadDefaultDriverProfiles) {
 		setDriverProfiles(loadDefaultDriverProfiles);	
 		setDriverProfilesPercentages();		
+		setDriverProfilesCount();
 	}
 
 	public void addDriverProfile(Car c){
@@ -559,6 +626,11 @@ public class HighWay {
 		c.setDriver(d);
 		getDriverProfiles().add(c);
 		setDriverProfilesPercentages();
+		addDriverProfilesCount();
+	}
+
+	private void addDriverProfilesCount() {
+		driverProfilesCount.add(0);		
 	}
 
 	public static ArrayList<Float> getDriverProfilesPercentages() {
@@ -632,5 +704,127 @@ public class HighWay {
 		if(driverProfiles != null){
 			HighWay.driverProfiles=driverProfiles;
 		}
+		setDriverProfilesPercentages();
+		setDriverProfilesCount();
+	}
+
+	private int getCarCount(){
+		int result = 0;
+		for (RoadObject car : roadObjects) {
+			if(car instanceof Car){
+				result++;
+			}
+		}
+		return result;
+	}
+
+	public ArrayList<Integer> getDriverProfilesCount() {
+		return driverProfilesCount;
+	}
+
+	public static void setDriverProfilesCount(ArrayList<Integer> driverProfilesCount) {
+		HighWay.driverProfilesCount = driverProfilesCount;
+	}
+	
+	public static void setDriverProfilesCount() {
+		driverProfilesCount = new ArrayList<>();
+		Integer[] count = new Integer[driverProfiles.size()];
+		for (RoadObject ro : roadObjects) {
+			if(ro instanceof Car){
+				int index = getDriverProfileIndex(((Car)ro).getName());
+				count[index] = count[index]+1;
+			}
+		}
+		for (int i = 0; i < count.length; i++) {
+			if(count[i] == null){
+				driverProfilesCount.add(0);
+			} else {
+				driverProfilesCount.add(count[i]);
+			}
+		}		
+	}
+
+	private int getBiggestDifference() {
+		Float[] difference = getPercentageDifferences();
+		int result = 0;
+		Float biggest = 0f;
+		for (int i = 0; i < difference.length; i++) {
+			if(difference[i] > biggest){
+				result = i;
+				biggest = difference[i]; 
+			}
+		}
+		return result;
+	}
+
+	private Float[] getPercentageDifferences() {
+		Float[] percentages = getPercentages();	
+		Float[] differences = new Float[driverProfiles.size()];
+		for (int i = 0; i < percentages.length; i++) {
+			differences[i] = driverProfilesPercentages.get(i) - percentages[i];
+		}		
+		return differences;
+	}
+
+
+	private Float[] getPercentages() {
+		Float[] percentages = new Float[driverProfiles.size()];
+		int all = getCarCount();
+		for (int i = 0; i < driverProfiles.size(); i++) {
+			int j = driverProfilesCount.get(i);
+			Float f = (float)j;
+			percentages[i] = (Float) f / (float)all * 100f;
+			System.out.println(driverProfiles.get(i).getName() + ": " + percentages[i]);
+		}
+		return percentages;
+	}	
+	
+	public static int getDriverProfileIndex(String profile){
+		Car dp = getDriverProfile(profile);
+		return driverProfiles.indexOf(dp);
+	}
+
+	public static void incrementCount(int profileIndex) {
+		ArrayList<Integer> driverProfilesCount2 = new ArrayList<>();
+		for (int i = 0; i < driverProfilesCount.size(); i++) {			
+			if(i == profileIndex){
+				driverProfilesCount2.add(driverProfilesCount.get(i)+1); 				
+			} else{
+				driverProfilesCount2.add(driverProfilesCount.get(i));
+			}
+		}
+		setDriverProfilesCount(driverProfilesCount2);
+	}
+	
+	public static void decrementCount(int profileIndex) {
+		ArrayList<Integer> driverProfilesCount2 = new ArrayList<>();
+		for (int i = 0; i < driverProfilesCount.size(); i++) {			
+			if(i == profileIndex){
+				driverProfilesCount2.add(driverProfilesCount.get(i)-1); 				
+			} else{
+				driverProfilesCount2.add(driverProfilesCount.get(i));
+			}
+		}
+		setDriverProfilesCount(driverProfilesCount2);
+	}
+
+	public static boolean isFarther(RoadObject forward, RoadObject inSight, Car thisCar) {
+		if(inSight == null){
+			return false;
+		}
+		int forwardLane = forward.getLane();
+		int inSightLane = inSight.getLane();
+		
+		float distanceForward = Util.getDistance(forward.getPosition(), thisCar.getPosition());
+		float distanceInSight = Util.getDistance(inSight.getPosition(), thisCar.getPosition());
+		
+		float laneSize = Math.abs(forwardLane - inSightLane) * road.getLaneSize();
+		
+		if(distanceForward > Util.pitagoras(distanceInSight, laneSize)){
+			return true;
+		} else {
+			return false;
+		}
+		
 	}
 }
