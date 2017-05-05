@@ -49,6 +49,7 @@ public class Controller{
 		this.hw.addDriverProfiles(LoadDefaultDriverProfiles());
 		w.setProfilesPanel();
 		w.setVisible(true);
+		w.setResizable(false);
 		deltaTime = 0;
 		prevTime = 0;
 		deltaCarTime = 0;
@@ -68,13 +69,13 @@ public class Controller{
 				}
 				hw.move();
 				w.setLog();
-				if(hw.getRoadObjects() != null){
+				if(HighWay.getRoadObjects() != null){
 					ArrayList<String> names = new ArrayList<>();
 					ArrayList<Float> datas = new ArrayList<>();
 					ArrayList<Color> colors = new ArrayList<>();
-					for (int i = 0; i < hw.getRoadObjects().size(); i++) {
-						if(hw.getRoadObjects().get(i) instanceof Car){
-							Car c = (Car) hw.getRoadObjects().get(i);
+					for (int i = 0; i < HighWay.getRoadObjects().size(); i++) {
+						if(HighWay.getRoadObjects().get(i) instanceof Car){
+							Car c = (Car) HighWay.getRoadObjects().get(i);
 							names.add("Car " + c.id);
 							datas.add(c.getCurrentSpeed());
 							colors.add(c.getColor());
@@ -83,7 +84,7 @@ public class Controller{
 					w.newChartData(names.toArray(), datas.toArray(), colors.toArray());
 				}
 			}
-			w.setRoadObjects(hw.getRoadObjects());
+			w.setRoadObjects(HighWay.getRoadObjects());
 			w.reFresh();
 			deltaTime=0;
 		}
@@ -119,8 +120,8 @@ public class Controller{
 		sb.append("newCarTimer: ").append(Float.toString(getNewCarTime())).append(System.lineSeparator());
 		sb.append("timeWarp: ").append(Float.toString(hw.getTimeWarp())).append(System.lineSeparator());
 		sb.append("lanes: ").append(hw.getLaneCount()).append(System.lineSeparator());
-		if(hw.getDriverProfiles().size()>0){
-			for (Car driverProfile : hw.getDriverProfiles()) {
+		if(HighWay.getDriverProfiles().size()>0){
+			for (Car driverProfile : HighWay.getDriverProfiles()) {
 				sb.append("DriverProfile").append(System.lineSeparator());
 				sb.append("name: ").append(driverProfile.getName()).append(System.lineSeparator());
 				sb.append("maxSpeed: ").append(Float.toString(driverProfile.getMaxSpeed())).append(System.lineSeparator());
@@ -133,8 +134,8 @@ public class Controller{
 				sb.append("safetyGap: ").append(Float.toString(driverProfile.getDriver().getSafetyGap())).append(System.lineSeparator());
 			}
 		}
-		if(hw.getRoadObjects().size()>0){
-			for (RoadObject roadObject : hw.getRoadObjects()) {
+		if(HighWay.getRoadObjects().size()>0){
+			for (RoadObject roadObject : HighWay.getRoadObjects()) {
 				if(roadObject instanceof Car){
 					Car c = (Car)roadObject;
 					sb.append("Car ").append(c.id).append(System.lineSeparator());
@@ -225,9 +226,9 @@ public class Controller{
 						break;
 					case "lanes:":
 						int lanes = Integer.parseInt(name[1]);
-						w.surface.setLaneCount(lanes);
+						Surface.setLaneCount(lanes);
 						w.setLanes();
-						hw.setDriverProfiles(null);
+						HighWay.setDriverProfiles(null);
 						break;
 	
 					case "ObjectCount:":
@@ -293,7 +294,7 @@ public class Controller{
 	
 					case "actualSpeed:":
 						c.setCurrentSpeed(Float.parseFloat(name[1]));
-						hw.getRoadObjects().add(c);
+						HighWay.getRoadObjects().add(c);
 						break;
 						
 					case "lane:":
@@ -313,7 +314,7 @@ public class Controller{
 	
 					case "currentTime:":
 						b.currentTime = Float.parseFloat(name[1]);
-						hw.getRoadObjects().add(b);
+						HighWay.getRoadObjects().add(b);
 						break;
 	
 					default:
@@ -428,6 +429,10 @@ public class Controller{
 	public void restart() {
 		Road road = w.getRoad();
 		this.hw = new HighWay(road, getTimeWarp());
+
+		deltaTime = 0;
+		prevTime = 0;
+		deltaCarTime = 0;
 	}
 
 	public float getNewCarTime() {

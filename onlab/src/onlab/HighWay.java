@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
-import javax.swing.JLabel;
-
 import onlab.Driver.Status;
 import onlab.Util.Direction;
 
@@ -24,9 +22,9 @@ public class HighWay {
 	}
 
 	public HighWay(Road road, float tl) {
-		this.roadObjects = new ArrayList<RoadObject>();		
+		HighWay.roadObjects = new ArrayList<RoadObject>();		
 		RoadObject.count = 0;
-		this.road = road;
+		HighWay.road = road;
 		setTimeWarp(tl);
 		setLenght((float) (road.getRectPartSize()*2 + road.getOvalPartSize()*Math.PI/2));
 		setDriverProfilesCount();
@@ -44,7 +42,7 @@ public class HighWay {
 	}
 	
 	public void setRoadObjects(ArrayList<RoadObject> roadObjects) {
-		this.roadObjects = roadObjects;
+		HighWay.roadObjects = roadObjects;
 	}
 
 	public float getTimeWarp() {
@@ -67,7 +65,7 @@ public class HighWay {
 		if(roadObject instanceof Car){
 			decrementCount(getDriverProfileIndex(((Car)roadObject).getName()));
 		}
-		this.getRoadObjects().remove(roadObject);
+		HighWay.getRoadObjects().remove(roadObject);
 		
 	}
 	
@@ -478,12 +476,12 @@ public class HighWay {
 		return circlePoint;
 	}
 	
-	private Point2D.Float getCirclePoint(Point2D.Float newPoint, float r) {
-		float x = road.getCircleCenter().x + r*(newPoint.x-road.getCircleCenter().x)/Util.getDistance(newPoint,road.getCircleCenter());
-		float y = road.getCircleCenter().y + r*(newPoint.y-road.getCircleCenter().y)/Util.getDistance(newPoint,road.getCircleCenter());	
-		Point2D.Float circlePoint = new Point2D.Float(x, y);		
-		return circlePoint;
-	}
+//	private Point2D.Float getCirclePoint(Point2D.Float newPoint, float r) {
+//		float x = road.getCircleCenter().x + r*(newPoint.x-road.getCircleCenter().x)/Util.getDistance(newPoint,road.getCircleCenter());
+//		float y = road.getCircleCenter().y + r*(newPoint.y-road.getCircleCenter().y)/Util.getDistance(newPoint,road.getCircleCenter());	
+//		Point2D.Float circlePoint = new Point2D.Float(x, y);		
+//		return circlePoint;
+//	}
 
 	private float getDiameter(int lane) {
 		return road.getOvalPartSize() - (lane-1+0.5f)*road.getLaneSize()*2;
@@ -541,7 +539,7 @@ public class HighWay {
 			if(roadObject instanceof Car){
 				decrementCount(getDriverProfileIndex(((Car)roadObject).getName()));
 			}
-			this.getRoadObjects().remove(roadObject);
+			HighWay.getRoadObjects().remove(roadObject);
 		}
 	}
 	
@@ -643,8 +641,9 @@ public class HighWay {
 	
 	public static void setDriverProfilesPercentages(){
 		driverProfilesPercentages = new ArrayList<>();
-		for (Car car : getDriverProfiles()) {
-			driverProfilesPercentages.add((1f/getDriverProfiles().size())*100);
+		int size = getDriverProfiles().size();
+		for (int i = 0; i < size; i++) {
+			driverProfilesPercentages.add((1f/size)*100);
 		}
 	}
 

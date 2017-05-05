@@ -333,44 +333,6 @@ public class Driver {
 		return true;
 	}
 
-	private boolean canChange(RoadObject inSight, RoadObject forward, RoadObject backward, Car thisCar, Float speed) {
-		if(forward != null)
-		
-		
-		if(forward != null){
-			boolean tooClose = Util.getDistance(forward.getPosition(), thisCar.getPosition()) < thisCar.getDriver().getSafetyGap() + forward.getSize();
-			if(forward instanceof Car){
-				Car forwardCar = (Car) forward;		
-				boolean fasterTotheSide = inSight instanceof Car && forwardCar.getCurrentSpeed() > ((Car) inSight).getCurrentSpeed();
-				boolean stoppingTotheSide = forwardCar.getDriver().getStatus() != Status.STOPPED || forwardCar.getDriver().getStatus() != Status.STOPPING;
-				boolean tooSlow = forwardCar.getCurrentSpeed() < speed;
-				if(tooSlow && (!fasterTotheSide || inSight instanceof Block)){
-					return false;
-				}
-				if(tooClose || (stoppingTotheSide && !tooClose)){
-					return false;
-				}				
-			} 
-			if(inSight != null){
-
-				boolean forwardCloser = Util.getDistance(forward.getPosition(), thisCar.getPosition()) < Util.getDistance(inSight.getPosition(), thisCar.getPosition());
-				if(forwardCloser){
-					return false;
-				}
-				if(forward instanceof Block && forwardCloser){
-					return false;
-				}
-			} 
-		}
-		if(backward instanceof Car){
-			Car backwardCar = (Car) backward;
-			if(backwardCar.getCurrentSpeed() > speed){
-				return false;
-			}
-		}		
-		return true;
-	}
-	
 	private boolean isChanging(Status s){
 		if(s == Status.CHANGELEFT || s == Status.CHANGERIGHT){
 			return true;
@@ -378,16 +340,14 @@ public class Driver {
 		return false;
 	}
 	
-
-	
-	private Util.Direction getDirection(Status s){
-		if(s == Status.CHANGERIGHT){
-			return Util.Direction.RIGHT;
-		} else if (s == Status.CHANGELEFT){
-			return Util.Direction.LEFT;
-		}
-		return null;
-	}
+//	private Util.Direction getDirection(Status s){
+//		if(s == Status.CHANGERIGHT){
+//			return Util.Direction.RIGHT;
+//		} else if (s == Status.CHANGELEFT){
+//			return Util.Direction.LEFT;
+//		}
+//		return null;
+//	}
 	
 	private float getBreakDistance(RoadObject inSight, Car thisCar){
 		float distance = Util.getDistance(inSight.getPosition(), thisCar.getPosition());

@@ -40,7 +40,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	JLabel newObjectTitle, carTitle, driverTitle, blockTitle, aditional, selectedTitle, selectedCarObject, selectedBlockObject;
 	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLenght;
 	JLabel lLanes, ldpChooser, scolorChooser, lLaneSpan, lcarName, lNewCarTimer, lTimeWarp;
-	JLabel lDPTitle, lIDTitle, lNameTitle, lPercentageTitle, lColorTitle, lcarCount;
+	JLabel lDPTitle, lIDTitle, lNameTitle, lPercentageTitle, lColorTitle, lcarCount, lCarStatus;
 	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, 
 			tblockDuration, thwLenght, stblockDuration, sthwLengh;
 	JTextField tcarName, tNewCarTimer, tTimeWarp;
@@ -232,15 +232,19 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		dpChooser = new JComboBox<String>(getDriverProfiles());
 		dpChooser.setSelectedIndex(0);
 		dpChooser.addActionListener(this);
+		lCarStatus = new JLabel("Status: ");
 		scar.add(ldpChooser);
 		scar.add(dpChooser);
 		scar.add(selectedCarObject);
+		scar.add(lCarStatus);
 		carLayout.putConstraint(SpringLayout.WEST, ldpChooser, 5, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, ldpChooser, 5, SpringLayout.NORTH, scar);
 		carLayout.putConstraint(SpringLayout.WEST, dpChooser, 120, SpringLayout.WEST, ldpChooser);
 		carLayout.putConstraint(SpringLayout.NORTH, dpChooser, 5, SpringLayout.NORTH, scar);
 		carLayout.putConstraint(SpringLayout.WEST, selectedCarObject, 120, SpringLayout.WEST, dpChooser);
 		carLayout.putConstraint(SpringLayout.NORTH, selectedCarObject, 5, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.WEST, lCarStatus, 50, SpringLayout.WEST, selectedCarObject);
+		carLayout.putConstraint(SpringLayout.NORTH, lCarStatus, 5, SpringLayout.NORTH, scar);
 
 		slcarMaxSpeed = new JLabel("Max Speed: ");
 		slcarMaxAcc = new JLabel("Max Acceleration: ");
@@ -249,7 +253,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(slcarMaxAcc);
 		scar.add(slcarColor);
 		carLayout.putConstraint(SpringLayout.WEST, slcarMaxSpeed, 5, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, slcarMaxSpeed, 25, SpringLayout.NORTH, selectedCarObject);
+		carLayout.putConstraint(SpringLayout.NORTH, slcarMaxSpeed, 30, SpringLayout.NORTH, selectedCarObject);
 		carLayout.putConstraint(SpringLayout.WEST, slcarMaxAcc, 5, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, slcarMaxAcc, 25, SpringLayout.NORTH, slcarMaxSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, slcarColor, 5, SpringLayout.WEST, scar);
@@ -265,7 +269,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(stcarMaxAcc);
 		scar.add(scolorChooser);
 		carLayout.putConstraint(SpringLayout.WEST, stcarMaxSpeed, 120, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, stcarMaxSpeed, 25, SpringLayout.NORTH, selectedCarObject);
+		carLayout.putConstraint(SpringLayout.NORTH, stcarMaxSpeed, 30, SpringLayout.NORTH, selectedCarObject);
 		carLayout.putConstraint(SpringLayout.WEST, stcarMaxAcc, 120, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, stcarMaxAcc, 25, SpringLayout.NORTH, slcarMaxSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, scolorChooser, 120, SpringLayout.WEST, scar);
@@ -352,7 +356,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	public void setOptions(){
 		combo = new JPanel();
 		newObjectTitle = new JLabel("New Road Object: ");
-		typeChooser = new JComboBox(types);
+		typeChooser = new JComboBox<String>(types);
 		typeChooser.setSelectedIndex(0);
 		typeChooser.addActionListener(this);
 		combo.add(newObjectTitle);
@@ -488,7 +492,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		tcarMaxAcc.setText("10");
 		tcarMaxSpeed.setToolTipText("km/h");
 		tcarMaxAcc.setToolTipText("from 0 to 100 km/h in sec");
-		colorChooser = new JComboBox(colorsS);
+		colorChooser = new JComboBox<String>(colorsS);
 		car.add(tcarMaxSpeed);
 		car.add(tcarMaxAcc);
 		car.add(colorChooser);
@@ -573,7 +577,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		blockLayout.putConstraint(SpringLayout.WEST, lLaneSpan, 10, SpringLayout.WEST, block);
 		blockLayout.putConstraint(SpringLayout.NORTH, lLaneSpan, 25, SpringLayout.NORTH, lblockDuration);
 
-		Integer[] laneSpan = new Integer[surface.getLaneCount()];
+		Integer[] laneSpan = new Integer[Surface.getLaneCount()];
 		for (int i = 0; i < laneSpan.length; i++) {
 			laneSpan[i] = i+1;
 		}
@@ -666,7 +670,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() instanceof JComboBox){
-			JComboBox cb = (JComboBox)e.getSource();	        
+			JComboBox<?> cb = (JComboBox<?>)e.getSource();	        
 	        if(cb == typeChooser){
 	        	String type = (String)cb.getSelectedItem();	        	
 	        	typeSelected(type);
@@ -765,10 +769,10 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	@Override
 	public void itemStateChanged(ItemEvent e) {   	
 		if(e.getSource() instanceof JComboBox){
-			JComboBox cb = (JComboBox)e.getSource();
+			JComboBox<?> cb = (JComboBox<?>)e.getSource();
 			if(cb == cbLanes){
 				Integer lane = (Integer) e.getItem();
-				surface.setLaneCount(lane);	  
+				Surface.setLaneCount(lane);	  
 				setLanes();
 			}
 		}
@@ -776,7 +780,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	
 	public void setLanes(){
 		cbLaneSpan.removeAllItems();				
-    	Integer[] lanes = new Integer[surface.getLaneCount()];
+    	Integer[] lanes = new Integer[Surface.getLaneCount()];
 		for (int i = 0; i < lanes.length; i++) {
 			cbLaneSpan.addItem(i+1);
 		}
@@ -815,6 +819,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 //				select.remove(sblock);
 //				select.add(scar);							
 				selectedCarObject.setText("ID: " + selected.id);
+				lCarStatus.setText("Status: " + ((Car) selected).getDriver().getStatus().toString());
 				stcarMaxSpeed.setText(Float.toString(((Car) selected).getMaxSpeed()));
 				stcarMaxAcc.setText(Float.toString(((Car) selected).getMaxAcc()));
 				for (int i = 0; i < colorsC.length; i++){
@@ -858,7 +863,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		return new Road(surface.ovalBorder, surface.firstBorder, 
 				surface.firstOvalPartSize, surface.firstRectPartSize, 
 				surface.laneSize, surface.getStartPosition(),
-				surface.circleCenter, surface.getLaneCount());
+				surface.circleCenter, Surface.getLaneCount());
 	}
 	
 	@Override
@@ -877,7 +882,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 				int i = 1;
 				while(count != span){
 					int actLane = lane + i;
-					if(actLane > 0 && actLane <= surface.getLaneCount()){
+					if(actLane > 0 && actLane <= Surface.getLaneCount()){
 						roadPoint = surface.getRoadPoint(newPoint, actLane);
 						c.hw.addBlock(roadPoint, actLane, Float.parseFloat(tblockDuration.getText()));
 						count++;
@@ -895,26 +900,18 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 

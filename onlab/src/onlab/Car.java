@@ -2,7 +2,6 @@ package onlab;
 
 import java.awt.Color;
 import java.awt.geom.Point2D;
-import java.util.LinkedList;
 import onlab.Driver.Status;
 
 public class Car extends RoadObject{
