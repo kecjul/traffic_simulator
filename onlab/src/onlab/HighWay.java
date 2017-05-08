@@ -288,6 +288,7 @@ public class HighWay {
 		RoadObject result = null;
 		float minDistance = asker.getRange();
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
+		
 		for (RoadObject roadObject : ros) {
 			if(asker != roadObject){
 				if(isROInUpperRectPart(asker.getPosition()) && isROInUpperRectPart(roadObject.getPosition())) {
@@ -543,12 +544,12 @@ public class HighWay {
 		}
 	}
 	
-	private float getXChange(float kmToPixel) {
-		return kmToPixel*(float) (Math.sin(Util.toRadian(60)));
+	private float getYChange(float kmToPixel) {
+		return kmToPixel*(float) (Math.sin(Util.toRadian(15)));
 	}
 	
-	private float getYChange(float kmToPixel) {
-		return kmToPixel*(float) (Math.cos(Util.toRadian(60)));
+	private float getXChange(float kmToPixel) {
+		return kmToPixel*(float) (Math.cos(Util.toRadian(15)));
 	}
 	
 	private Point2D.Float getStartPosition(int laneIndex) {

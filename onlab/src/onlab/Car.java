@@ -62,7 +62,6 @@ public class Car extends RoadObject{
 		}
 		if (getCurrentSpeed() > getMaxSpeed()){
 			setCurrentSpeed(getMaxSpeed());
-//			getDriver().s = Status.DRIVING;
 		}		
 	}
 	
