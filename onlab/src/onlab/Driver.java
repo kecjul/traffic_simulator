@@ -67,13 +67,16 @@ public class Driver {
 	}
 
 	public float drive(RoadObject inSight, Car thisCar) {
+		if(thisCar.getChangingAngle() != 15){
+			changingSpace = (float) (HighWay.road.getLaneSize()/Math.sin(Util.toRadian(thisCar.getChangingAngle())));
+			changingSpaceStraight = (float) Math.sqrt(Util.square(changingSpace) - Util.square(HighWay.road.getLaneSize()));
+		}
 		float change = 0;
 		if(s == Status.CHANGELEFT || s == Status.CHANGERIGHT){
 			change = changingDrive(thisCar);	
 		} else {
-			boolean canChangeRight = canChange(inSight, Util.Direction.RIGHT, thisCar);
 			//changeRight?
-			if(HighWay.isInnerMostLane(thisCar.getLane()) && canChangeRight){
+			if(HighWay.isInnerMostLane(thisCar.getLane()) && canChange(inSight, Util.Direction.RIGHT, thisCar)){
 				s = Status.CHANGERIGHT;
 				change = changingDrive(thisCar);
 			} else if(HighWay.isLaneToTheSide(Util.Direction.RIGHT, thisCar.getLane()) && isNoneToTheRight(thisCar)){
@@ -171,6 +174,16 @@ public class Driver {
 		float tempPrefSpeed = this.prefSpeed;
 		
 		this.prefSpeed = (prefSpeed + changingPlusSpeed) > thisCar.getMaxSpeed()? thisCar.getMaxSpeed() : (prefSpeed + changingPlusSpeed);
+
+		RoadObject forward = thisCar.getSight(getDirection(getStatus()), Util.Direction.FORWARD);
+		if(forward != null){
+			float distance = Util.pitagorasAC(HighWay.road.getLaneSize(), Util.getDistance(thisCar.getPosition(), forward.getPosition()));
+			if(distance < thisCar.getSize()){
+				thisCar.setChangingAngle(75);
+			} else if(distance < thisCar.getSize() + safetyGap && thisCar.getChangingAngle() < 75){
+				thisCar.setChangingAngle(thisCar.getChangingAngle() + 5);
+			} 
+		}
 		float change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
 		
 		this.prefSpeed = tempPrefSpeed;		
@@ -192,12 +205,15 @@ public class Driver {
 	}
 	
 	private boolean isNoneToTheRight(Car thisCar) {
+		System.out.println("isNoneToTheRight");
 		RoadObject forward = thisCar.getSight(Util.Direction.RIGHT, Util.Direction.FORWARD);
 		RoadObject backward = thisCar.getSight(Util.Direction.RIGHT, Util.Direction.BACKWARD);
 		
 		if(forward == null && backward == null){
 			return true;
-		} else if(forward instanceof Car && ((Car)forward).getCurrentSpeed() > thisCar.getDriver().getPrefSpeed() && backward == null) {
+		} else if(forward instanceof Car 
+				&& ((Car)forward).getCurrentSpeed() > thisCar.getDriver().getPrefSpeed() + changingPlusSpeed 
+				&& backward == null) {
 			return true;
 		} else {
 			return false;
@@ -220,7 +236,8 @@ public class Driver {
 	}	
 
 	private boolean canChange(RoadObject inSight, Util.Direction dir, Car thisCar) {
-		boolean result = false;		
+		boolean result = false;	
+		System.out.println("canChange " + dir.toString());
 		RoadObject forward = thisCar.getSight(dir, Util.Direction.FORWARD);
 		RoadObject backward = thisCar.getSight(dir, Util.Direction.BACKWARD);
 		
@@ -259,7 +276,7 @@ public class Driver {
 				if(!forwardFarther){
 					return false;
 				}
-				enoughSpace = distanceForward > breakDistance;				
+				enoughSpace = distanceForward - changingSpaceStraight > breakDistance;				
 			} else if(forward instanceof Car){
 				Car forwardCar = (Car) forward;
 				float forwardSpace = changingTime * forwardCar.getCurrentSpeed();
@@ -271,7 +288,7 @@ public class Driver {
 					return false;	
 				}
 				
-				if(inSight != null){
+				if(inSight != null && inSight instanceof Car){
 					Car inSightCar = (Car) inSight;						
 					if(forwardCar.getCurrentSpeed() < inSightCar.getCurrentSpeed()) {								
 						return false;
@@ -346,6 +363,15 @@ public class Driver {
 			return true;
 		}
 		return false;
+	}
+	
+	private Util.Direction getDirection(Status s){
+		if(s == Status.CHANGELEFT)
+			return Util.Direction.LEFT;
+		else if( s == Status.CHANGERIGHT){
+			return Util.Direction.RIGHT;
+		}
+		return null;
 	}
 	
 //	private Util.Direction getDirection(Status s){

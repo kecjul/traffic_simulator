@@ -52,7 +52,11 @@ public class Util {
 		return (float) Math.sqrt(square(b.x - a.x) + square(b.y - a.y));
 	}
 
-	public static float pitagoras(float a, float b) {
+	public static float pitagorasAB(float a, float b) {
 		return (float) Math.sqrt(square(a) + square(b));
+	}
+
+	public static float pitagorasAC(float a, float c) {
+		return (float) Math.sqrt(square(c) - square(a));
 	}
 }

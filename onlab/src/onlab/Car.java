@@ -11,7 +11,7 @@ public class Car extends RoadObject{
 	private float currentSpeed;
 	private Driver driver;
 	private String name;
-
+	private int changingAngle = 15;
 
 	Car(){
 		setSize(20);
@@ -50,6 +50,7 @@ public class Car extends RoadObject{
 
 	public void drive() {
 		float change = 0;
+		System.out.println("inSight ");
 		RoadObject inSight = HighWay.getSightForward(this, getLane(), true);
 		change = getDriver().drive(inSight, this);
 		change = getMaxChange(change);
@@ -178,5 +179,13 @@ public class Car extends RoadObject{
 	public void setDriverProfile(String name) {
 		Car car = HighWay.getDriverProfile(name);
 		setDriverProfile(car);
+	}
+
+	public int getChangingAngle() {
+		return changingAngle;
+	}
+
+	public void setChangingAngle(int changingAngle) {
+		this.changingAngle = changingAngle;
 	}
 }

@@ -74,8 +74,9 @@ public class HighWay {
 		getRoadObjects().add(newBlock);		
 	}
 
+	@SuppressWarnings("unchecked")
 	public void modifyCar(Car selected) {
-		for (RoadObject roadObject : getRoadObjects()) {
+		for (RoadObject roadObject :(ArrayList<RoadObject>) getRoadObjects().clone()) {
 			if (roadObject.id == selected.id) {
 				((Car) roadObject).setDriverProfile(selected);
 				break;
@@ -83,8 +84,9 @@ public class HighWay {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void modifyBlock(int id, float duration) {
-		for (RoadObject roadObject : getRoadObjects()) {
+		for (RoadObject roadObject :(ArrayList<RoadObject>) getRoadObjects().clone()) {
 			if (roadObject.id == id) {
 				((Block) roadObject).duration = duration;
 				break;
@@ -96,9 +98,10 @@ public class HighWay {
 	 * LOG
 	 */
 	
+	@SuppressWarnings("unchecked")
 	public String getType(int i){
 		String type = null;
-		for (RoadObject roadObject : getRoadObjects()) {
+		for (RoadObject roadObject : (ArrayList<RoadObject>) getRoadObjects().clone()) {
 			if (i == (roadObject.id)) {
 				if (roadObject instanceof Car) {
 					type = "Car";
@@ -109,9 +112,10 @@ public class HighWay {
 		}
 		return type;
 	}
+	@SuppressWarnings("unchecked")
 	public String getStatus(int i) {
 		String status = null;
-		for (RoadObject roadObject : getRoadObjects()) {
+		for (RoadObject roadObject :(ArrayList<RoadObject>) getRoadObjects().clone()) {
 			if (i == (roadObject.id)) {
 				if (roadObject instanceof Car) {
 					Car thisCar = (Car) roadObject;
@@ -125,9 +129,10 @@ public class HighWay {
 		}
 		return status;
 	}
+	@SuppressWarnings("unchecked")
 	public String getSpeed(int i){
 		String speed = null;
-		for (RoadObject roadObject : getRoadObjects()) {
+		for (RoadObject roadObject :(ArrayList<RoadObject>) getRoadObjects().clone()) {
 			if (i == (roadObject.id)) {
 				if (roadObject instanceof Car) {
 					Car thisCar = (Car) roadObject;
@@ -255,6 +260,10 @@ public class HighWay {
 		if(result == null){
 			result = getFurtherSight(asker, lane, dir, sameLane);
 		}
+		if(result != null)
+			System.out.println("    Car" + asker.id + " " + (sameLane ? "inSight" : dir.toString()) + ": " + result.id);			
+		else
+			System.out.println("    Car" + asker.id + " " + (sameLane ? "inSight" : dir.toString()) + ": null");
 		
 		return result;
 	}
@@ -319,6 +328,12 @@ public class HighWay {
 		if(result == null){
 			result = getFurtherSight(asker, lane, dir, sameLane);
 		}
+		
+		if(result != null)
+			System.out.println("    Car" + asker.id + " " + (sameLane ? "inSight" : dir.toString()) + ": " + result.id);			
+		else
+			System.out.println("    Car" + asker.id + " " + (sameLane ? "inSight" : dir.toString()) + ": null");
+		
 		return result;
 	}
 	
@@ -346,12 +361,13 @@ public class HighWay {
 					thisCar.setLane(--lane);
 				}
 				thisCar.getDriver().setStatus(Status.DRIVING);
+				thisCar.setChangingAngle(15);
 			}
 		}		
 		if(isROInOvalPart(thisCar.getPosition())){
-			newPosition = ovalPosition(thisCar.getPosition(), thisCar.getAdvance(timeWarp), thisCar.getLane(), status);
+			newPosition = ovalPosition(thisCar.getPosition(), thisCar.getAdvance(timeWarp), thisCar.getLane(), status, thisCar.getChangingAngle());
 		} else {
-			newPosition = rectPosition(thisCar.getPosition(), thisCar.getAdvance(timeWarp), thisCar.getLane(), status);
+			newPosition = rectPosition(thisCar.getPosition(), thisCar.getAdvance(timeWarp), thisCar.getLane(), status, thisCar.getChangingAngle());
 		}		
 		thisCar.setPosition(newPosition);
 	}
@@ -368,43 +384,43 @@ public class HighWay {
 				return true;
 			}
 		} else {
-			if(Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)) < getYChange(kmToPixel(thisCar.getAdvance(timeWarp)))){
+			if(Math.abs(thisCar.getPosition().y - getRectY(thisCar.getPosition(), lane)) < getYChange(kmToPixel(thisCar.getAdvance(timeWarp)), thisCar.getChangingAngle())){
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private Point2D.Float ovalPosition(Point2D.Float position, Float advance, int lane, Status status){	
+	private Point2D.Float ovalPosition(Point2D.Float position, Float advance, int lane, Status status, int changingAngle){	
 		float angle = getAngle(position, lane);
 		float plusAngle = getAngleFromAdvance(kmToPixel(advance), lane);
 		if(status == Status.CHANGELEFT || status == Status.CHANGERIGHT ){
 			//TODO
 			float pixelAdvance = kmToPixel(advance);
-			plusAngle = (float) (plusAngle * (pixelAdvance/getXChange(pixelAdvance)));
+			plusAngle = getAngleFromAdvance(getXChange(pixelAdvance, changingAngle), lane);
 		}
 		angle += plusAngle;
 		angle%=360;
 		if(status == Status.CHANGELEFT ){
-			return getChangePos(position, angle, lane, (-1) * getYChange(kmToPixel(advance)));
+			return getChangePos(position, angle, lane, (-1) * getYChange(kmToPixel(advance), changingAngle));
 		} else if(status == Status.CHANGERIGHT ){
-			return getChangePos(position, angle, lane, getYChange(kmToPixel(advance)));			
+			return getChangePos(position, angle, lane, getYChange(kmToPixel(advance), changingAngle));			
 		} else {
 			return getPos(angle, lane);
 		}
 	}
 
 	
-	private Point2D.Float rectPosition(Point2D.Float position, float advance, int lane, Status status){
+	private Point2D.Float rectPosition(Point2D.Float position, float advance, int lane, Status status, int changingAngle){
 		Point2D.Float newPosition = null;
 		float xChange = kmToPixel(advance);
 		float yChange = 0;
 		if(status == Status.CHANGELEFT ){
-			xChange = getXChange(kmToPixel(advance));
-			yChange = (-1) * getYChange(kmToPixel(advance));
+			xChange = getXChange(kmToPixel(advance), changingAngle);
+			yChange = (-1) * getYChange(kmToPixel(advance), changingAngle);
 		} else if(status == Status.CHANGERIGHT ){
-			xChange = getXChange(kmToPixel(advance));
-			yChange = getYChange(kmToPixel(advance));
+			xChange = getXChange(kmToPixel(advance), changingAngle);
+			yChange = getYChange(kmToPixel(advance), changingAngle);
 		} 
 		
 		if(isROInUpperRectPart(position)){
@@ -446,7 +462,6 @@ public class HighWay {
 		pos.x = (float) (Math.cos(radian) * diameter);
 		pos.y = (float) (Math.sin(radian) * diameter);
 		return normalCoords(pos);
-		
 	}	
 
 	private static Point2D.Float circleCenteredCoords(Point2D.Float position) {
@@ -544,12 +559,12 @@ public class HighWay {
 		}
 	}
 	
-	private float getYChange(float kmToPixel) {
-		return kmToPixel*(float) (Math.sin(Util.toRadian(15)));
+	private float getYChange(float kmToPixel, int changingAngle) {
+		return kmToPixel*(float) (Math.sin(Util.toRadian(changingAngle)));
 	}
 	
-	private float getXChange(float kmToPixel) {
-		return kmToPixel*(float) (Math.cos(Util.toRadian(15)));
+	private float getXChange(float kmToPixel, int changingAngle) {
+		return kmToPixel*(float) (Math.cos(Util.toRadian(changingAngle)));
 	}
 	
 	private Point2D.Float getStartPosition(int laneIndex) {
@@ -820,7 +835,7 @@ public class HighWay {
 		
 		float laneSize = Math.abs(forwardLane - inSightLane) * road.getLaneSize();
 		
-		if(distanceForward > Util.pitagoras(distanceInSight, laneSize)){
+		if(distanceForward > Util.pitagorasAB(distanceInSight, laneSize)){
 			return true;
 		} else {
 			return false;

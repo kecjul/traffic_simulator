@@ -32,10 +32,10 @@ public class Controller{
 	private float tickTime = (float) 10.0; 
 	private float prevTime;
 	
-	private float deltaCarTime;
 	private float newCarTime = 5000.0f;
+	private int tickcount = 0;
 	
-	private float timeWarp = 20f;
+	private float timeWarp = 10f;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
@@ -52,20 +52,18 @@ public class Controller{
 		w.setResizable(false);
 		deltaTime = 0;
 		prevTime = 0;
-		deltaCarTime = 0;
 	}
 		
 	void trafficLoop(){
 		float delta = getDelta();
 		deltaTime+=delta;
-		deltaCarTime+=delta;
 		
 		//tickTime = 10 ms
 		if(deltaTime>=tickTime){
 			if(s == Status.RUNNING){
-				if(deltaCarTime>=getNewCarTime()/getTimeWarp()){
+				if(tickcount * tickTime >=getNewCarTime()/getTimeWarp()){
 					hw.newCar();
-					deltaCarTime = 0;
+					tickcount = 0;
 				}
 				hw.move();
 				w.setLog();
@@ -87,6 +85,7 @@ public class Controller{
 			w.setRoadObjects(HighWay.getRoadObjects());
 			w.reFresh();
 			deltaTime=0;
+			tickcount++;
 		}
 	}
 
@@ -109,11 +108,11 @@ public class Controller{
 			s = Status.PAUSED;
 		}else{
 			s = Status.RUNNING;
-			deltaCarTime = 0;
 			deltaTime=0;
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void SaveGame(File file){
 		StringBuffer sb  = new StringBuffer();
 
@@ -135,7 +134,7 @@ public class Controller{
 			}
 		}
 		if(HighWay.getRoadObjects().size()>0){
-			for (RoadObject roadObject : HighWay.getRoadObjects()) {
+			for (RoadObject roadObject :(ArrayList<RoadObject>) HighWay.getRoadObjects().clone()) {
 				if(roadObject instanceof Car){
 					Car c = (Car)roadObject;
 					sb.append("Car ").append(c.id).append(System.lineSeparator());
@@ -432,7 +431,6 @@ public class Controller{
 
 		deltaTime = 0;
 		prevTime = 0;
-		deltaCarTime = 0;
 	}
 
 	public float getNewCarTime() {

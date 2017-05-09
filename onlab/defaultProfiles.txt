@@ -1,10 +1,10 @@
 DriverProfile 1
 name: nagyi
-maxSpeed: 100.0
+maxSpeed: 110.0
 maxAcc: 5.0
 color: 0 0 255 
 actualSpeed: 50.0
-prefSpeed: 80.0
+prefSpeed: 100.0
 rangeOfView: 60.0
 safetyGap: 30.0
 DriverProfile 2
@@ -13,6 +13,6 @@ maxSpeed: 180.0
 maxAcc: 2.0
 color: 255 0 0 
 actualSpeed: 100.0
-prefSpeed: 120.0
+prefSpeed: 130.0
 rangeOfView: 100.0
 safetyGap: 20.0

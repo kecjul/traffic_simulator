@@ -57,8 +57,10 @@ public class Surface extends JPanel{
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void drawRoadObjects(Graphics g, Graphics2D g2d) {
-		for (RoadObject roadObject : roadObjects) {
+		ArrayList<RoadObject> roadObjects2 = (ArrayList<RoadObject>) roadObjects.clone();
+		for (RoadObject roadObject : roadObjects2) {
 			Point2D.Float pos = roadObject.getPosition();
     		FontMetrics fm = g.getFontMetrics();
             double textWidth = fm.getStringBounds(Integer.toString(roadObject.id), g).getWidth()/2.2;
@@ -159,8 +161,9 @@ public class Surface extends JPanel{
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void setRoadObjects(ArrayList<RoadObject> ro){
-		roadObjects = ro;
+		roadObjects = (ArrayList<RoadObject>) ro.clone();
 	}
 	
 	public Point2D.Float convertCoords(Point2D.Float position){
@@ -227,8 +230,10 @@ public class Surface extends JPanel{
 		return roadPoint;
 	}
 
+	@SuppressWarnings("unchecked")
 	public RoadObject getObject(Point2D.Float newPoint){
-		for (RoadObject roadObject : roadObjects) {
+		ArrayList<RoadObject> roadObjects2 = (ArrayList<RoadObject>) roadObjects.clone();
+		for (RoadObject roadObject : roadObjects2) {
 			if(roadObject instanceof Block && getDistance(newPoint, roadObject.getPosition()) < blockSize){
 				return roadObject;
 			}else if(roadObject instanceof Car && getDistance(newPoint, roadObject.getPosition()) < carSize){
