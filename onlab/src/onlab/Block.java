@@ -18,7 +18,7 @@ public class Block extends RoadObject{
 		count++;
 		id = count;	
 		setSize(10);
-		currentTime = System.nanoTime() / 1000000000;
+		currentTime = 0;
 	}
 	
 	public Block(Float startPosition, int lane, float duration) {
@@ -27,19 +27,15 @@ public class Block extends RoadObject{
 		setSize(10);
 		this.setPosition(startPosition);
 		this.setLane(lane);
-		currentTime = System.nanoTime() / 1000000000;
+		currentTime = 0;
 		this.duration = duration;
 	}
 
 	public boolean tick(){
-		float lastTime = currentTime;
-		currentTime = System.nanoTime() / 1000000000;
-		float delta = currentTime - lastTime;
-		if(delta<=1)
-			duration -= delta;
-		if (duration <= 0){
+		currentTime += Controller.tickTime;
+		if (currentTime / 1000 > duration){
 			return true;
-		}
+		} 
 		return false;
 	}
 }

@@ -2,6 +2,8 @@ package onlab;
 
 import java.awt.Color;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
+
 import onlab.Driver.Status;
 
 public class Car extends RoadObject{
@@ -60,8 +62,7 @@ public class Car extends RoadObject{
 
 	public void drive() {
 		float change = 0;
-		System.out.println("inSight ");
-		RoadObject inSight = HighWay.getSightForward(this, getLane(), true);
+		ArrayList<RoadObject> inSight = HighWay.getSight(this);
 		change = getDriver().drive(inSight, this);
 		change = getMaxChange(change);
 		

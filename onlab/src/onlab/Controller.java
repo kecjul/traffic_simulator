@@ -29,13 +29,13 @@ public class Controller{
 	Window w; 
 	HighWay hw; 
 	private float deltaTime;
-	private float tickTime = (float) 10.0; 
+	public static float tickTime = (float) 10.0; 
 	private float prevTime;
 	
 	private float newCarTime = 5000.0f;
 	private int tickcount = 0;
 	
-	private float timeWarp = 10f;
+	public static float timeWarp = 10f;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
