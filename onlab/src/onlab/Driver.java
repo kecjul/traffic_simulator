@@ -71,7 +71,7 @@ public class Driver {
 	}
 
 	public float drive(ArrayList<RoadObject> inSightList, Car thisCar) {
-		logList(inSightList, thisCar);
+//		logList(inSightList, thisCar);
 		
 		RoadObject inSight = inSightList.get(0);
 		RoadObject leftForward = inSightList.get(1);

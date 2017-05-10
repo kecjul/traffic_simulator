@@ -180,6 +180,9 @@ public class HighWay {
 	
 	@SuppressWarnings("unchecked")
 	public void move() {
+
+		int size = getRoadObjects().size() + deletedCars.size();
+		System.out.println("count: " + size);
 		ArrayList<RoadObject> ros = (ArrayList<RoadObject>) getRoadObjects().clone();
 		ArrayList<RoadObject> deletables = new ArrayList<RoadObject>();
 		for (RoadObject roadObject : ros) {
@@ -236,7 +239,6 @@ public class HighWay {
 				if (asker.id != roadObject.id) {
 					float angle = (getAngle(roadObject.getPosition(), asker.getLane()) + 360 - getAngle(asker.getPosition(), asker.getLane())) % 360;
 					float distance = Util.getDistance(asker.getPosition(), roadObject.getPosition());
-					System.out.println(roadObject.id + " " + angle);
 					if((roadObject.getLane() == lane || isChangingHere(roadObject, lane)) && angle < 180){
 						if(angle < 180) { // forward
 							if (angle < insightMin && distance < asker.getRange()){
