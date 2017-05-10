@@ -48,6 +48,16 @@ public class Car extends RoadObject{
 		setLane(lane);
 	}
 
+	public void renew(java.awt.geom.Point2D.Float startPosition, Car car, int lane) {
+		count++;
+		id = count;
+		setPosition(startPosition);
+		setDriver(new Driver());
+		setDriverProfile(car);
+		setLane(lane);
+		setCurrentSpeed(0);
+	}
+
 	public void drive() {
 		float change = 0;
 		System.out.println("inSight ");
@@ -188,4 +198,5 @@ public class Car extends RoadObject{
 	public void setChangingAngle(int changingAngle) {
 		this.changingAngle = changingAngle;
 	}
+
 }

@@ -104,7 +104,7 @@ public class Driver {
 		float change = 0;
 		change = (getPrefSpeed() - currentSpeed);
 		if (Math.abs(change) > 1/maxAcc)
-			change = 1/maxAcc;
+			change = 1/maxAcc * (change < 0 ? (-1) : 1);
 		return change;
 	}
 	
@@ -155,14 +155,14 @@ public class Driver {
 			Car car = (Car) inSight;
 			float otherCarSpeed = car.getCurrentSpeed();
 			
-			if(Math.abs(otherCarSpeed - currentSpeed) <0.1){
+			if(Math.abs(otherCarSpeed - currentSpeed) < 0.001){
 				currentSpeed = otherCarSpeed;
 				change = 0;
 			}
 			
-			if (getPrefSpeed() >= otherCarSpeed) {
+			if (getPrefSpeed() > otherCarSpeed) {
 				change = (otherCarSpeed - currentSpeed) / breakDistance;
-			} else if (getPrefSpeed() < otherCarSpeed) {
+			} else if (getPrefSpeed() <= otherCarSpeed) {
 				change = normalDrive(currentSpeed, maxAcc);
 			}
 			
@@ -282,8 +282,8 @@ public class Driver {
 				float forwardSpace = changingTime * forwardCar.getCurrentSpeed();
 				
 				boolean forwardStopping = forwardCar.getDriver().getStatus() == Status.STOPPED || forwardCar.getDriver().getStatus() == Status.STOPPING;				
-				enoughSpace = (distanceForward + forwardSpace - changingSpaceStraight) > breakDistance;
-				
+//				enoughSpace = (distanceForward + forwardSpace - changingSpaceStraight) > breakDistance;
+				enoughSpace = (distanceForward - changingSpaceStraight) > breakDistance;
 				if(forwardStopping || distanceForward < breakDistance){
 					return false;	
 				}
@@ -307,11 +307,19 @@ public class Driver {
 			float distanceBack = (float) Math.sqrt(Util.square(distance) - Util.square(HighWay.road.getLaneSize()));
 			float backwardTime = (distanceBack + changingSpaceStraight) / backwardCar.getCurrentSpeed();
 			float backwardSpace = changingTime * backwardCar.getCurrentSpeed();
+			boolean enoughSpace = (distanceBack + changingSpaceStraight - backwardSpace) > breakDistance;
 			
 			if(backwardCar.getCurrentSpeed() > thisCar.getCurrentSpeed() 
 					|| changingTime > backwardTime
-					|| (distanceBack + changingSpaceStraight - backwardSpace) < breakDistance
+					|| !enoughSpace
 					|| distanceBack < breakDistance){
+				return false;
+			}
+		}
+		
+		if(forward != null && backward != null){
+			float distance = Util.getDistance(forward.getPosition(), backward.getPosition());
+			if(distance < 2 * breakDistance ){
 				return false;
 			}
 		}
@@ -333,11 +341,11 @@ public class Driver {
 				float forwardSpace = changingTime * forwardCar.getCurrentSpeed();
 				
 				boolean forwardStopping = forwardCar.getDriver().getStatus() == Status.STOPPED || forwardCar.getDriver().getStatus() == Status.STOPPING;
-				boolean enoughSpace = (distanceForward + forwardSpace - changingSpaceStraight) > breakDistance;
-				
+//				boolean enoughSpace = (distanceForward + forwardSpace - changingSpaceStraight) > breakDistance;
+				boolean enoughSpace = (distanceForward - changingSpaceStraight) > breakDistance;
 				if(forwardStopping || !enoughSpace || distanceForward < breakDistance || forwardCar.getCurrentSpeed() < getPrefSpeed()){
 					return false;
-				}				
+				}	
 			}
 		}
 		
@@ -347,11 +355,18 @@ public class Driver {
 			float distanceBack = (float) Math.sqrt(Util.square(distance) - Util.square(HighWay.road.getLaneSize()));
 			float backwardTime = (distanceBack + changingSpaceStraight) / backwardCar.getCurrentSpeed();
 			float backwardSpace = changingTime * backwardCar.getCurrentSpeed();
-			
+			boolean enoughSpace = (distanceBack + changingSpaceStraight - backwardSpace) > breakDistance;
 			if(backwardCar.getCurrentSpeed() > thisCar.getCurrentSpeed() 
 					|| changingTime > backwardTime
-					|| (distanceBack + changingSpaceStraight - backwardSpace) < breakDistance
+					|| !enoughSpace
 					|| distanceBack < breakDistance){
+				return false;
+			}
+		}
+		
+		if(forward != null && backward != null){
+			float distance = Util.getDistance(forward.getPosition(), backward.getPosition());
+			if(distance < 2 * breakDistance ){
 				return false;
 			}
 		}

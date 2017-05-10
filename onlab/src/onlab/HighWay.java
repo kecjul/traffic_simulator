@@ -11,6 +11,7 @@ public class HighWay {
 	private float pixelLenght = 0;
 	private float kmLenght = 5;
 	private static ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
+	private ArrayList<Car> deletedCars = new ArrayList<Car>();
 	public static Road road;
 	private static ArrayList<Car> driverProfiles = new ArrayList<Car>();
 	private static ArrayList<Float> driverProfilesPercentages = new ArrayList<Float>();
@@ -63,6 +64,7 @@ public class HighWay {
 	
 	public void deleteObject(RoadObject roadObject) {
 		if(roadObject instanceof Car){
+			deletedCars.add((Car) roadObject);
 			decrementCount(getDriverProfileIndex(((Car)roadObject).getName()));
 		}
 		HighWay.getRoadObjects().remove(roadObject);
@@ -152,7 +154,13 @@ public class HighWay {
 		int laneIndex = (index % road.getLaneCount()) + 1;
 		Point2D.Float startPosition = getStartPosition(laneIndex);
 		if(getObject(startPosition) == null){
-			getRoadObjects().add(new Car(getStartPosition(laneIndex), getDriverProfiles().get(profileIndex), laneIndex));
+			if(deletedCars.size() > 0){
+				Car newCar = deletedCars.remove(0);
+				newCar.renew(getStartPosition(laneIndex), getDriverProfiles().get(profileIndex), laneIndex);				
+				getRoadObjects().add(newCar);
+			} else {
+				getRoadObjects().add(new Car(getStartPosition(laneIndex), getDriverProfiles().get(profileIndex), laneIndex));
+			}
 			incrementCount(profileIndex);			
 		}
 	}
@@ -553,9 +561,11 @@ public class HighWay {
 	private void deleteObjects(ArrayList<RoadObject> roadObjects) {
 		for (RoadObject roadObject : roadObjects) {
 			if(roadObject instanceof Car){
+				deletedCars.add((Car) roadObject);
 				decrementCount(getDriverProfileIndex(((Car)roadObject).getName()));
-			}
+			} 
 			HighWay.getRoadObjects().remove(roadObject);
+			
 		}
 	}
 	
