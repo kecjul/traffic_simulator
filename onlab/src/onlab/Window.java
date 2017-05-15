@@ -9,12 +9,18 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.BadLocationException;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -22,6 +28,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
@@ -46,7 +53,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	JTextField tcarName, tNewCarTimer, tTimeWarp;
 	JLabel  slcarMaxSpeed, slcarMaxAcc, slcarColor, sldriverPrefSpeed, sldriverRange, sldriverSafety, slblockDuration, slhwLenght;
 	JLabel  stcarMaxSpeed, stcarMaxAcc, stdriverPrefSpeed, stdriverRange, stdriverSafety;
-	JComboBox<String> typeChooser , colorChooser, dpChooser;
+	JComboBox<String> typeChooser , colorChooser, dpChooser, cbCharts;
 	JComboBox<Integer> cbLaneSpan, cbLanes;
 	JButton bRestart, bPause, bSave, bLoad, bcAccept, bbAccept, bcDel, bbDel, bChart, bAddDriverProfile;
 	JTextArea tLog;
@@ -60,8 +67,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	String[] colorsS = {"White", "Yellow", "Green", "Cyan", "Blue", "Pink", "Orange", "Red"};
 	Color[] colorsC = {Color.WHITE ,Color.YELLOW ,Color.GREEN ,Color.CYAN ,Color.BLUE ,Color.PINK ,Color.ORANGE, Color.RED};
 	Integer[] lanes = {1, 2, 3, 4, 5, 6};
+	String[] charts = {"Car speed", "Profile speed", "Driver status"};
 	RoadObject selected;
-	ArrayList<TimeSeries> series = new ArrayList<TimeSeries>();
+	Map<String, TimeSeries> series = new HashMap<String, TimeSeries>();
 	ArrayList<TimeSeriesCollection> dataset= new ArrayList<TimeSeriesCollection>();
 	JFreeChart chart;
 	XYPlot plot;
@@ -76,7 +84,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	Dimension settingsMinimumSize = new Dimension(280, screenHeight);
 	Dimension logMinimumSize = new Dimension(280, screenHeight);
 	int settingsSplitPositionY = screenWidth - 280;
-	int profileSplitPositionY = settingsSplitPositionY - 250;
+	int profileSplitPositionY = screenWidth - 280 - 250;
 	int selectSplitPositionX = screenHeight - 250;
 	int logSplitPositionX = screenHeight - 200;
 		
@@ -92,8 +100,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		setOptions();		
 		log = new JPanel();
 		log.setLayout(new BorderLayout());
-		setLogPanel();
-		setCharts();	
+		setLogPanel();	
 		
 		surface.setMinimumSize(surfaceMinimumSize);
 		settings.setMinimumSize(settingsMinimumSize);
@@ -103,6 +110,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		setSelectPanel();
 		
 		profiles = new JPanel();
+		profiles.setMinimumSize(logMinimumSize);	
 		
 		logSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		logSplit.setTopComponent(settings);
@@ -209,7 +217,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 			profileLayout.putConstraint(SpringLayout.WEST, color, 180, SpringLayout.WEST, dpPanel);
 			profileLayout.putConstraint(SpringLayout.NORTH, color, (i+1) * 25, SpringLayout.NORTH, lIDTitle);
 		}
-
+		dpPanel.setMinimumSize(logMinimumSize);
 		profilesSplit.setRightComponent(dpPanel);
 		profilesSplit.setDividerLocation(profileSplitPositionY);
 	}
@@ -394,12 +402,17 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		bRestart.addActionListener(this);		
 		bPause = new JButton("Pause");
 		bPause.addActionListener(this);
-		bChart = new JButton("Speed chart");
-		bChart.addActionListener(this);
 		bSave = new JButton("Save");
 		bSave.addActionListener(this);
 		bLoad = new JButton("Load");
 		bLoad.addActionListener(this);
+		
+
+		cbCharts = new JComboBox<String>(charts);
+		cbCharts.setSelectedIndex(0);
+		cbCharts.setToolTipText("Type of the chart");
+		bChart = new JButton("Show chart");
+		bChart.addActionListener(this);
 		
 		lcarCount = new JLabel("There are " + HighWay.getRoadObjects().size() + " cars on the highway.");
 
@@ -412,9 +425,10 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		highWay.add(cbLanes);
 		highWay.add(bRestart);
 		highWay.add(bPause);
-		highWay.add(bChart);
 		highWay.add(bSave);
 		highWay.add(bLoad);
+		highWay.add(cbCharts);
+		highWay.add(bChart);
 		highWay.add(lcarCount);
 		hwLayout.putConstraint(SpringLayout.WEST, aditional, 5, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, aditional, 5, SpringLayout.NORTH, highWay);	
@@ -444,7 +458,10 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		hwLayout.putConstraint(SpringLayout.WEST, bLoad, 125, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bLoad, 35, SpringLayout.NORTH, bPause);
 
-		hwLayout.putConstraint(SpringLayout.WEST, bChart, 70, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.WEST, cbCharts, 5, SpringLayout.WEST, highWay);
+		hwLayout.putConstraint(SpringLayout.NORTH, cbCharts, 35, SpringLayout.NORTH, bSave);
+
+		hwLayout.putConstraint(SpringLayout.WEST, bChart, 120, SpringLayout.WEST, highWay);
 		hwLayout.putConstraint(SpringLayout.NORTH, bChart, 35, SpringLayout.NORTH, bSave);
 		
 		hwLayout.putConstraint(SpringLayout.WEST, lcarCount, 5, SpringLayout.WEST, highWay);
@@ -601,8 +618,125 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		chartFrame.setTitle("Traffic jam simulator - Chart of the cars speed");
 		chartFrame.setSize(500, 300);
 		chartFrame.setDefaultCloseOperation(HIDE_ON_CLOSE);
-		series.add(new TimeSeries("Random Data"));
-	    dataset.add(new TimeSeriesCollection(series.get(0)));
+		switch(cbCharts.getSelectedIndex()){
+			case 0:
+				setCarSpeedChart();
+				break;
+			case 1:
+				setProfileSpeedChart();
+				break;
+			case 2:
+			default:
+				setStatusChart();
+				break;				
+		}
+		
+	}
+	
+	private void setStatusChart() {
+		int maxSize = 0;
+		DateFormat df = new SimpleDateFormat("mm:ss");
+	    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+		for(Date date : c.driverStatusChartData.keySet()){			
+			ArrayList<String> names = (ArrayList<String>) c.driverStatusChartData.get(date).get(0);
+			ArrayList<Integer> datas = (ArrayList<Integer>) c.driverStatusChartData.get(date).get(1);
+			
+			for (int j = 0; j < names.size(); j++) {
+				String name = names.get(j);
+				Integer data = datas.get(j);
+				String dateString = df.format(date);
+				dataset.addValue(data, name, dateString);
+					
+			}	
+			if(names.size() > maxSize){
+				maxSize = names.size();
+			}
+		}    
+	    
+		JFreeChart chart = ChartFactory.createStackedBarChart(
+				"Distribution of the drivers statuses", 
+				"Time", 
+				"Number of Cars", 
+				dataset);
+//		plot = chart.getXYPlot();
+//        ValueAxis axis = plot.getDomainAxis();
+//        axis.setAutoRange(true);
+//		Object[] array =  c.driverStatusChartData.keySet().toArray();
+//		double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
+//        axis.setFixedAutoRange(range);  // 60 seconds
+//        axis = plot.getRangeAxis();
+//        axis.setRange(0, maxSize); 
+	    ChartPanel chartPanel = new ChartPanel(chart);
+	    
+	    JPanel content = new JPanel(new BorderLayout());
+        content.add(chartPanel);
+        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
+        chartFrame.setContentPane(content);
+//	    setProfileSpeedChartData();
+	}
+
+	private void setProfileSpeedChart() {
+		series = new HashMap<>();
+		dataset = new ArrayList<>();
+		series.put("Random Data", new TimeSeries("Random Data"));
+	    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
+	    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+	            "Average speed of the cars in driver profiles", 
+	            "Time", 
+	            "Speed(m/s)",
+	            dataset.get(0), 
+	            true, 
+	            true, 
+	            false
+	        );
+	    plot = chart.getXYPlot();
+        ValueAxis axis = plot.getDomainAxis();
+        axis.setAutoRange(true);
+		Object[] array =  c.profileSpeedChartData.keySet().toArray();
+		double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
+        axis.setFixedAutoRange(range);  // 60 seconds
+        axis = plot.getRangeAxis();
+        axis.setRange(0.0, 200.0); 
+	    ChartPanel chartPanel = new ChartPanel(chart);
+	    
+	    JPanel content = new JPanel(new BorderLayout());
+        content.add(chartPanel);
+        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
+        chartFrame.setContentPane(content);
+	    setProfileSpeedChartData();
+	}
+
+	private void setProfileSpeedChartData() {
+		int i = 0;
+		series = new HashMap<>();
+		dataset = new ArrayList<>();
+		for(Millisecond ms : c.profileSpeedChartData.keySet()){
+			
+			ArrayList<String> names = (ArrayList<String>) c.profileSpeedChartData.get(ms).get(0);
+			ArrayList<Float> datas = (ArrayList<Float>) c.profileSpeedChartData.get(ms).get(1);
+			
+			for (int j = 0; j < names.size(); j++) {
+				String name = names.get(j);
+				Float data = datas.get(j);
+				if(series.get(name) == null){
+					Color color =  HighWay.getDriverProfile(name).getColor();
+					series.put(name, new TimeSeries(name));
+					dataset.add(new TimeSeriesCollection(series.get(name)));
+					plot.setDataset(i, dataset.get(i));
+					plot.setRenderer(i, new StandardXYItemRenderer());
+					plot.getRenderer().setSeriesPaint(i, color);
+					i++;
+				} 
+				series.get(name).add(ms, data);
+			}			
+		}
+	}
+
+	private void setCarSpeedChart() {
+		series = new HashMap<>();
+		dataset = new ArrayList<>();
+		series.put("Random Data", new TimeSeries("Random Data"));
+	    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
 	    JFreeChart chart = ChartFactory.createTimeSeriesChart(
 	            "Speed of the cars", 
 	            "Time", 
@@ -615,7 +749,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	    plot = chart.getXYPlot();
         ValueAxis axis = plot.getDomainAxis();
         axis.setAutoRange(true);
-        axis.setFixedAutoRange(60000.0);  // 60 seconds
+		Object[] array =  c.carSpeedChartData.keySet().toArray();
+		double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
+        axis.setFixedAutoRange(range);  // 60 seconds
         axis = plot.getRangeAxis();
         axis.setRange(0.0, 200.0); 
 	    ChartPanel chartPanel = new ChartPanel(chart);
@@ -624,31 +760,53 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
         content.add(chartPanel);
         chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
         chartFrame.setContentPane(content);
-        
-        
-		 
+	    setCarSpeedChartData();
 	}
-	public void newChartData(Object[] name, Object[] data, Object[] color){
-		Millisecond now = new Millisecond();
-		for (int i = 0; i < name.length; i++) {
-			if( name[i] != null){
-				if(i >= series.size()){
-					series.add(new TimeSeries((String)name[i]));
-					dataset.add(new TimeSeriesCollection(series.get(i)));
+
+	private void setCarSpeedChartData() {
+		int i = 0;
+		series = new HashMap<>();
+		dataset = new ArrayList<>();
+		for(Millisecond ms : c.carSpeedChartData.keySet()){
+			
+			ArrayList<String> names = (ArrayList<String>) c.carSpeedChartData.get(ms).get(0);
+			ArrayList<Float> datas = (ArrayList<Float>) c.carSpeedChartData.get(ms).get(1);
+			for (int j = 0; j < names.size(); j++) {
+				String name = names.get(j);
+				Float data = datas.get(j);
+				if(series.get(name) == null){
+					series.put(name, new TimeSeries(name));
+					dataset.add(new TimeSeriesCollection(series.get(name)));
 					plot.setDataset(i, dataset.get(i));
 					plot.setRenderer(i, new StandardXYItemRenderer());
-					plot.getRenderer().setSeriesPaint(i, (Color)color[i]);
-				}
-				if(!series.get(i).getKey().equals((String)name[i])){
-					series.get(i).setKey((String)name[i]);
-					plot.getRenderer().setSeriesPaint(i, (Color)color[i]);
-				}
-				series.get(i).add(now, (Float)data[i]);
-//				System.out.println("plotColor: " + plot.getRenderer().getSeriesPaint(i) + " carColor: " + color[i]);
-				plot.getRenderer().getSeriesPaint(i);
-			}
+					i++;
+				} 
+				series.get(name).add(ms, data);
+			}			
 		}
 	}
+
+//	public void newChartData(Object[] name, Object[] data, Object[] color){
+//		Millisecond now = new Millisecond();
+//		for (int i = 0; i < name.length; i++) {
+//			if( name[i] != null){
+//				if(i >= series.size()){
+//					series.add(new TimeSeries((String)name[i]));
+//					dataset.add(new TimeSeriesCollection(series.get(i)));
+//					plot.setDataset(i, dataset.get(i));
+//					plot.setRenderer(i, new StandardXYItemRenderer());
+//					plot.getRenderer().setSeriesPaint(i, (Color)color[i]);
+//				}
+//				if(!series.get(i).getKey().equals((String)name[i])){
+//					series.get(i).setKey((String)name[i]);
+//					plot.getRenderer().setSeriesPaint(i, (Color)color[i]);
+//				}
+//				series.get(i).add(now, (Float)data[i]);
+////				System.out.println("plotColor: " + plot.getRenderer().getSeriesPaint(i) + " carColor: " + color[i]);
+//				plot.getRenderer().getSeriesPaint(i);
+//			}
+//		}
+//	}
 	
 	
 	
@@ -706,6 +864,10 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 				bPause.setText("Pause");
 				c.stop();
 			}else if(b == bChart){
+				bPause.setText("Start");
+				if(c.s == Status.RUNNING)
+					c.stop();
+				setCharts();
 				chartFrame.setVisible(true);
 			} else if("Save".equals(text)){
 				String extension = "txt";
@@ -774,7 +936,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 				Integer lane = (Integer) e.getItem();
 				Surface.setLaneCount(lane);	  
 				setLanes();
-			}
+			} 
 		}
 	}
 	
@@ -803,8 +965,14 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 				newRow = "Block " + Integer.toString(i) + " has " + c.hw.getStatus(i) + " seconds left.";
 			}
 			if(newRow != null){
-				tLog.append(newRow);
-				tLog.append(System.lineSeparator());
+				try {
+					if(tLog.getDocument().getLength()>2000000){
+						tLog.getDocument().remove(1000000, 1000000);
+					}
+					tLog.getDocument().insertString(0, newRow + System.lineSeparator(), null);
+				} catch (BadLocationException e) {					
+					e.printStackTrace();
+				}   
 			}
 		}
 	}

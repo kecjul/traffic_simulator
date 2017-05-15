@@ -26,7 +26,7 @@ public class Car extends RoadObject{
 		setDriver(new Driver());
 		count++;
 		id = count;
-		setCurrentSpeed(100);
+		setCurrentSpeed(getDriver().getPrefSpeed());
 	}
 	
 	Car(Point2D.Float startPosition, float maxSpeed, float maxAcc, Color color, float prefSpeed, float range, float safety){
@@ -37,8 +37,8 @@ public class Car extends RoadObject{
 		this.setMaxSpeed(maxSpeed);
 		this.setMaxAcc(maxAcc);
 		this.setColor(color);
-		this.setCurrentSpeed(0);
 		this.setDriver(new Driver(prefSpeed, range, safety));
+		this.setCurrentSpeed(getDriver().getPrefSpeed());
 	}
 	
 	public Car(java.awt.geom.Point2D.Float startPosition, Car car, int lane) {
@@ -48,6 +48,7 @@ public class Car extends RoadObject{
 		setPosition(startPosition);
 		setDriverProfile(car);
 		setLane(lane);
+		this.setCurrentSpeed(getDriver().getPrefSpeed());
 	}
 
 	public void renew(java.awt.geom.Point2D.Float startPosition, Car car, int lane) {
@@ -57,7 +58,7 @@ public class Car extends RoadObject{
 		setDriver(new Driver());
 		setDriverProfile(car);
 		setLane(lane);
-		setCurrentSpeed(0);
+		setCurrentSpeed(getDriver().getPrefSpeed());
 	}
 
 	public void drive() {

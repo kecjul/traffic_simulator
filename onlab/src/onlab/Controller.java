@@ -1,6 +1,8 @@
 package onlab;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.awt.geom.Point2D;
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,8 +11,14 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.swing.JFrame;
+
+import org.jfree.data.time.Millisecond;
 
 public class Controller{
 
@@ -33,12 +41,21 @@ public class Controller{
 	private float prevTime;
 	
 	private float newCarTime = 5000.0f;
-	private int tickcount = 0;
+	private int carTickCount = 0;
 	
 	public static float timeWarp = 10f;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
+
+	@SuppressWarnings("rawtypes")
+	Map<Millisecond, ArrayList> carSpeedChartData = new HashMap<Millisecond, ArrayList>();
+	Map<Millisecond, ArrayList> profileSpeedChartData = new HashMap<Millisecond, ArrayList>();
+	Map<Date, ArrayList> driverStatusChartData = new TreeMap<Date, ArrayList>();
+	private int chartTickCount = 0;
+	Date start = new Date();
+	Date past = new Date();
+	
 	Controller(){
 		this.w = new Window(this);
 		w.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -49,44 +66,151 @@ public class Controller{
 		this.hw.addDriverProfiles(LoadDefaultDriverProfiles());
 		w.setProfilesPanel();
 		w.setVisible(true);
-		w.setResizable(false);
+		w.setResizable(false);		
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		w.setMinimumSize(new Dimension(screenSize.width, screenSize.height-50));
+		
 		deltaTime = 0;
 		prevTime = 0;
+		carSpeedChartData = new HashMap<Millisecond, ArrayList>();
+		profileSpeedChartData = new HashMap<Millisecond, ArrayList>();
+		driverStatusChartData = new TreeMap<Date, ArrayList>();
+		start = new Date();
+		past = new Date();
 	}
 		
 	void trafficLoop(){
 		float delta = getDelta();
-		deltaTime+=delta;
-		
-		//tickTime = 10 ms
-		if(deltaTime>=tickTime){
-			if(s == Status.RUNNING){
-				if(tickcount * tickTime >=getNewCarTime()/getTimeWarp()){
-					hw.newCar();
-					tickcount = 0;
-				}
-				hw.move();
-				w.setLog();
-				if(HighWay.getRoadObjects() != null){
-					ArrayList<String> names = new ArrayList<>();
-					ArrayList<Float> datas = new ArrayList<>();
-					ArrayList<Color> colors = new ArrayList<>();
-					for (int i = 0; i < HighWay.getRoadObjects().size(); i++) {
-						if(HighWay.getRoadObjects().get(i) instanceof Car){
-							Car c = (Car) HighWay.getRoadObjects().get(i);
-							names.add("Car " + c.id);
-							datas.add(c.getCurrentSpeed());
-							colors.add(c.getColor());
-						}
+		if(delta>0){
+			deltaTime+=delta;
+			
+			//tickTime = 10 ms
+			if(deltaTime>=tickTime){
+				if(s == Status.RUNNING){
+					if(carTickCount * tickTime >=getNewCarTime()/getTimeWarp()){
+						hw.newCar();
+						carTickCount = 0;
+						setStatusChartData();
 					}
-					w.newChartData(names.toArray(), datas.toArray(), colors.toArray());
+					hw.move();
+					w.setLog();
+					if(HighWay.getRoadObjects() != null){
+						setChartData();						
+					}
+					chartTickCount++;
 				}
+				w.setRoadObjects(HighWay.getRoadObjects());
+				w.reFresh();
+				deltaTime=0;
+				carTickCount++;
 			}
-			w.setRoadObjects(HighWay.getRoadObjects());
-			w.reFresh();
-			deltaTime=0;
-			tickcount++;
 		}
+	}
+	
+	private void setChartData(){
+		Millisecond now = getCurrentChartTime(); 		
+		ArrayList<Object> temp = new ArrayList<>(); 
+		
+		ArrayList<String> names = new ArrayList<>();
+		ArrayList<Float> carSpeedDatas = new ArrayList<>();
+		
+		ArrayList<String> driverProfiles = HighWay.getListDriverProfileNames();
+		ArrayList<Integer> profileCount = new ArrayList<>();
+		ArrayList<Float> profileSpeedDatas = new ArrayList<>();
+		for (String string : driverProfiles) {
+			profileCount.add(0);
+			profileSpeedDatas.add(0f);
+		}	
+		
+		for (int i = 0; i < HighWay.getRoadObjects().size(); i++) {
+			if(HighWay.getRoadObjects().get(i) instanceof Car){
+				Car c = (Car) HighWay.getRoadObjects().get(i);
+				names.add("Car " + c.id);
+				carSpeedDatas.add(c.getCurrentSpeed());
+				
+				int profileIndex = driverProfiles.indexOf(c.getName());
+				profileCount.set(profileIndex, profileCount.get(profileIndex)+1);
+				profileSpeedDatas.set(profileIndex, profileSpeedDatas.get(profileIndex)+c.getCurrentSpeed());
+			}
+		}
+		for (int i = 0; i < profileCount.size(); i++) {
+			profileSpeedDatas.set(i, profileSpeedDatas.get(i)/profileCount.get(i));
+		}
+		
+		temp.add(names);
+		temp.add(carSpeedDatas);
+		carSpeedChartData.put(now, temp);
+		
+		temp = new ArrayList<>();
+		temp.add(driverProfiles);
+		temp.add(profileSpeedDatas);		
+		profileSpeedChartData.put(now, temp);
+
+		deleteOldChartData(carSpeedChartData);
+		deleteOldChartData(profileSpeedChartData);
+
+//		w.newChartData(names.toArray(), datas.toArray(), colors.toArray());
+	}
+	
+	private void setStatusChartData(){
+		Millisecond now = getCurrentChartTime(); 	
+		ArrayList<Object> temp = new ArrayList<>(); 
+		
+		onlab.Driver.Status[] driverStatus = Driver.Status.values();
+		ArrayList<String> status = new ArrayList<>();
+		ArrayList<Integer> driverStatusCount = new ArrayList<>();
+		for (int i = 0; i < driverStatus.length; i++) {
+			status.add(driverStatus[i].toString());
+			driverStatusCount.add(0);
+		}		
+		
+		for (int i = 0; i < HighWay.getRoadObjects().size(); i++) {
+			if(HighWay.getRoadObjects().get(i) instanceof Car){
+				Car c = (Car) HighWay.getRoadObjects().get(i);
+				int statusIndex = status.indexOf(c.getDriver().getStatus().toString());
+				driverStatusCount.set(statusIndex, driverStatusCount.get(statusIndex)+1);
+			}
+		}
+		
+		temp = new ArrayList<>();
+		temp.add(status);
+		temp.add(driverStatusCount);		
+		driverStatusChartData.put(now.getStart(), temp);
+
+		ArrayList<Date> del = new ArrayList<>();
+		for(Date date : driverStatusChartData.keySet()){
+			if(date.compareTo(start) < 0){
+				del.add(date);
+			}
+		}
+		for(Date date : del){
+			if(driverStatusChartData.get(date) != null){
+				driverStatusChartData.remove(date);
+			}
+		}
+	}
+
+	private void deleteOldChartData(Map<Millisecond, ArrayList> chartData) {
+		ArrayList<Millisecond> del = new ArrayList<>();
+		for(Millisecond ms : chartData.keySet()){
+			if(ms.getStart().compareTo(start) < 0){
+				del.add(ms);
+			}
+		}
+		for(Millisecond ms : del){
+			if(chartData.get(ms) != null){
+				chartData.remove(ms);
+			}
+		}
+	}
+
+	private Millisecond getCurrentChartTime() {
+		Date nowDate = new Date();
+		nowDate.setTime(start.getTime() + chartTickCount * 10);
+		if(chartTickCount>=6000){
+			start.setTime(start.getTime()+10);
+		}
+		return new Millisecond(nowDate);
 	}
 
 	private float getTime() {
@@ -177,7 +301,6 @@ public class Controller{
 	public void LoadGame(File file){
 		w.chartFrame.removeAll();
 		w.chartFrame.setVisible(false);
-		w.setCharts();
 		BufferedReader br = null;
 		String everything = null;
 		try {
@@ -337,9 +460,6 @@ public class Controller{
 
 	public ArrayList<Car> LoadDefaultDriverProfiles(){
 		ArrayList<Car> driverprofiles = new ArrayList<>();
-		w.chartFrame.removeAll();
-		w.chartFrame.setVisible(false);
-		w.setCharts();
 		BufferedReader br = null;
 		String everything = null;
 		try {
@@ -431,6 +551,11 @@ public class Controller{
 
 		deltaTime = 0;
 		prevTime = 0;
+		carSpeedChartData = new HashMap<Millisecond, ArrayList>();
+		profileSpeedChartData = new HashMap<Millisecond, ArrayList>();
+		driverStatusChartData = new TreeMap<Date, ArrayList>();
+		start = new Date();
+		past = new Date();
 	}
 
 	public float getNewCarTime() {

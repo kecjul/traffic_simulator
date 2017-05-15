@@ -824,16 +824,27 @@ public class HighWay {
 	}
 
 	public static String[] getDriverProfileNames() {
-		if(!getDriverProfiles().isEmpty()){
-			String[] names = new String[getDriverProfiles().size()];
-			for (int i = 0; i < names.length; i++) {
-				names[i] = getDriverProfiles().get(i).getName();
-			}				
-			return names;
-		} else {
+		ArrayList<String> names = getListDriverProfileNames();
+		if(names.isEmpty()){
 			String[] s = {"none"};
 			return s;
-		}
+		} else {
+			String[] result = new String[names.size()];
+			for (int i = 0; i < result.length; i++) {
+				result[i] = names.get(i);
+			}
+			return result;
+		}		
+	}
+
+	public static ArrayList<String> getListDriverProfileNames() {
+		ArrayList<String> names = new ArrayList<>();
+		if(!getDriverProfiles().isEmpty()){
+			for (Car profile : getDriverProfiles()) {
+				names.add(profile.getName());
+			}				
+		} 
+		return names;
 	}
 
 	public static Car getDriverProfile(String profile) {
