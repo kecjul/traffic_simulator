@@ -10,21 +10,21 @@ public class Block extends RoadObject{
 	float currentTime = 0;
 	
 	Block(){
-		setSize(10);
+		setSize(Surface.blockSize);
 	}
 	
 	Block(Point2D.Float startPosition){
 		this.setPosition(startPosition);
 		count++;
 		id = count;	
-		setSize(10);
+		setSize(Surface.blockSize);
 		currentTime = 0;
 	}
 	
 	public Block(Float startPosition, int lane, float duration) {
 		count++;
 		id = count;	
-		setSize(10);
+		setSize(Surface.blockSize);
 		this.setPosition(startPosition);
 		this.setLane(lane);
 		currentTime = 0;

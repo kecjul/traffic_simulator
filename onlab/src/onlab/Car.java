@@ -16,12 +16,12 @@ public class Car extends RoadObject{
 	private int changingAngle = 15;
 
 	Car(){
-		setSize(20);
+		setSize(Surface.carSize);
 		setDriver(new Driver());
 	}
 	
 	Car(Point2D.Float startPosition){
-		setSize(20);
+		setSize(Surface.carSize);
 		setPosition(startPosition);
 		setDriver(new Driver());
 		count++;
@@ -32,7 +32,7 @@ public class Car extends RoadObject{
 	Car(Point2D.Float startPosition, float maxSpeed, float maxAcc, Color color, float prefSpeed, float range, float safety){
 		count++;
 		this.id = count;
-		setSize(20);
+		setSize(Surface.carSize);
 		this.setPosition(startPosition);
 		this.setMaxSpeed(maxSpeed);
 		this.setMaxAcc(maxAcc);
@@ -44,7 +44,7 @@ public class Car extends RoadObject{
 	public Car(java.awt.geom.Point2D.Float startPosition, Car car, int lane) {
 		count++;
 		id = count;
-		setSize(20);
+		setSize(Surface.carSize);
 		setPosition(startPosition);
 		setDriverProfile(car);
 		setLane(lane);

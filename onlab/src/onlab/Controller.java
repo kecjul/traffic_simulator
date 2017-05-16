@@ -113,6 +113,7 @@ public class Controller{
 		
 		ArrayList<String> names = new ArrayList<>();
 		ArrayList<Float> carSpeedDatas = new ArrayList<>();
+		ArrayList<Color> carColors = new ArrayList<>();
 		
 		ArrayList<String> driverProfiles = HighWay.getListDriverProfileNames();
 		ArrayList<Integer> profileCount = new ArrayList<>();
@@ -127,6 +128,7 @@ public class Controller{
 				Car c = (Car) HighWay.getRoadObjects().get(i);
 				names.add("Car " + c.id);
 				carSpeedDatas.add(c.getCurrentSpeed());
+				carColors.add(c.getColor());
 				
 				int profileIndex = driverProfiles.indexOf(c.getName());
 				profileCount.set(profileIndex, profileCount.get(profileIndex)+1);
@@ -136,11 +138,13 @@ public class Controller{
 		for (int i = 0; i < profileCount.size(); i++) {
 			profileSpeedDatas.set(i, profileSpeedDatas.get(i)/profileCount.get(i));
 		}
-		
-		temp.add(names);
-		temp.add(carSpeedDatas);
-		carSpeedChartData.put(now, temp);
-		
+
+		if(chartTickCount % 5 == 0){
+			temp.add(names);
+			temp.add(carSpeedDatas);
+			temp.add(carColors);
+			carSpeedChartData.put(now, temp);
+		}
 		temp = new ArrayList<>();
 		temp.add(driverProfiles);
 		temp.add(profileSpeedDatas);		
@@ -154,6 +158,7 @@ public class Controller{
 	
 	private void setStatusChartData(){
 		Millisecond now = getCurrentChartTime(); 	
+		
 		ArrayList<Object> temp = new ArrayList<>(); 
 		
 		onlab.Driver.Status[] driverStatus = Driver.Status.values();
@@ -176,6 +181,7 @@ public class Controller{
 		temp.add(status);
 		temp.add(driverStatusCount);		
 		driverStatusChartData.put(now.getStart(), temp);
+		
 
 		ArrayList<Date> del = new ArrayList<>();
 		for(Date date : driverStatusChartData.keySet()){

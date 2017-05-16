@@ -83,8 +83,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	Dimension surfaceMinimumSize = new Dimension(screenWidth - 280, screenHeight - 150);
 	Dimension settingsMinimumSize = new Dimension(280, screenHeight);
 	Dimension logMinimumSize = new Dimension(280, screenHeight);
+	Dimension driverProfilePanelMinimumSize = new Dimension(320, screenHeight);
 	int settingsSplitPositionY = screenWidth - 280;
-	int profileSplitPositionY = screenWidth - 280 - 250;
+	int profileSplitPositionY = screenWidth - 280 - 320;
 	int selectSplitPositionX = screenHeight - 250;
 	int logSplitPositionX = screenHeight - 200;
 		
@@ -174,9 +175,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		profileLayout.putConstraint(SpringLayout.NORTH, lIDTitle, 25, SpringLayout.NORTH, dpPanel);
 		profileLayout.putConstraint(SpringLayout.WEST, lNameTitle, 25, SpringLayout.WEST, dpPanel);
 		profileLayout.putConstraint(SpringLayout.NORTH, lNameTitle, 25, SpringLayout.NORTH, dpPanel);
-		profileLayout.putConstraint(SpringLayout.WEST, lPercentageTitle, 100, SpringLayout.WEST, dpPanel);
+		profileLayout.putConstraint(SpringLayout.EAST, lPercentageTitle, -60, SpringLayout.EAST, dpPanel);
 		profileLayout.putConstraint(SpringLayout.NORTH, lPercentageTitle, 25, SpringLayout.NORTH, dpPanel);
-		profileLayout.putConstraint(SpringLayout.WEST, lColorTitle, 180, SpringLayout.WEST, dpPanel);
+		profileLayout.putConstraint(SpringLayout.EAST, lColorTitle, -5, SpringLayout.EAST, dpPanel);
 		profileLayout.putConstraint(SpringLayout.NORTH, lColorTitle, 25, SpringLayout.NORTH, dpPanel);
 		
 		JLabel id;
@@ -212,12 +213,12 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 			profileLayout.putConstraint(SpringLayout.NORTH, id,(i+1) * 25, SpringLayout.NORTH, lIDTitle);
 			profileLayout.putConstraint(SpringLayout.WEST, name, 25, SpringLayout.WEST, dpPanel);
 			profileLayout.putConstraint(SpringLayout.NORTH, name, (i+1) * 25, SpringLayout.NORTH, lIDTitle);
-			profileLayout.putConstraint(SpringLayout.WEST, percentage, 100, SpringLayout.WEST, dpPanel);
+			profileLayout.putConstraint(SpringLayout.EAST, percentage, -60, SpringLayout.EAST, dpPanel);
 			profileLayout.putConstraint(SpringLayout.NORTH, percentage, (i+1) * 25, SpringLayout.NORTH, lIDTitle);
-			profileLayout.putConstraint(SpringLayout.WEST, color, 180, SpringLayout.WEST, dpPanel);
+			profileLayout.putConstraint(SpringLayout.EAST, color, -5, SpringLayout.EAST, dpPanel);
 			profileLayout.putConstraint(SpringLayout.NORTH, color, (i+1) * 25, SpringLayout.NORTH, lIDTitle);
 		}
-		dpPanel.setMinimumSize(logMinimumSize);
+		dpPanel.setMinimumSize(driverProfilePanelMinimumSize);
 		profilesSplit.setRightComponent(dpPanel);
 		profilesSplit.setDividerLocation(profileSplitPositionY);
 	}
@@ -246,13 +247,13 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(selectedCarObject);
 		scar.add(lCarStatus);
 		carLayout.putConstraint(SpringLayout.WEST, ldpChooser, 5, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, ldpChooser, 5, SpringLayout.NORTH, scar);
-		carLayout.putConstraint(SpringLayout.WEST, dpChooser, 120, SpringLayout.WEST, ldpChooser);
+		carLayout.putConstraint(SpringLayout.NORTH, ldpChooser, 10, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.WEST, dpChooser, 5, SpringLayout.EAST, ldpChooser);
 		carLayout.putConstraint(SpringLayout.NORTH, dpChooser, 5, SpringLayout.NORTH, scar);
-		carLayout.putConstraint(SpringLayout.WEST, selectedCarObject, 120, SpringLayout.WEST, dpChooser);
-		carLayout.putConstraint(SpringLayout.NORTH, selectedCarObject, 5, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.WEST, selectedCarObject, 10, SpringLayout.EAST, dpChooser);
+		carLayout.putConstraint(SpringLayout.NORTH, selectedCarObject, 10, SpringLayout.NORTH, scar);
 		carLayout.putConstraint(SpringLayout.WEST, lCarStatus, 50, SpringLayout.WEST, selectedCarObject);
-		carLayout.putConstraint(SpringLayout.NORTH, lCarStatus, 5, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.NORTH, lCarStatus, 10, SpringLayout.NORTH, scar);
 
 		slcarMaxSpeed = new JLabel("Max Speed: ");
 		slcarMaxAcc = new JLabel("Max Acceleration: ");
@@ -261,7 +262,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(slcarMaxAcc);
 		scar.add(slcarColor);
 		carLayout.putConstraint(SpringLayout.WEST, slcarMaxSpeed, 5, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, slcarMaxSpeed, 30, SpringLayout.NORTH, selectedCarObject);
+		carLayout.putConstraint(SpringLayout.NORTH, slcarMaxSpeed, 40, SpringLayout.NORTH, selectedCarObject);
 		carLayout.putConstraint(SpringLayout.WEST, slcarMaxAcc, 5, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, slcarMaxAcc, 25, SpringLayout.NORTH, slcarMaxSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, slcarColor, 5, SpringLayout.WEST, scar);
@@ -277,7 +278,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(stcarMaxAcc);
 		scar.add(scolorChooser);
 		carLayout.putConstraint(SpringLayout.WEST, stcarMaxSpeed, 120, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, stcarMaxSpeed, 30, SpringLayout.NORTH, selectedCarObject);
+		carLayout.putConstraint(SpringLayout.NORTH, stcarMaxSpeed, 40, SpringLayout.NORTH, selectedCarObject);
 		carLayout.putConstraint(SpringLayout.WEST, stcarMaxAcc, 120, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, stcarMaxAcc, 25, SpringLayout.NORTH, slcarMaxSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, scolorChooser, 120, SpringLayout.WEST, scar);
@@ -291,7 +292,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(sldriverRange);
 		scar.add(sldriverSafety);
 		carLayout.putConstraint(SpringLayout.WEST, sldriverPrefSpeed, 200, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, sldriverPrefSpeed, 30, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.NORTH, sldriverPrefSpeed, 40, SpringLayout.NORTH, selectedCarObject);
 		carLayout.putConstraint(SpringLayout.WEST, sldriverRange, 200, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, sldriverRange, 25, SpringLayout.NORTH, sldriverPrefSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, sldriverSafety, 200, SpringLayout.WEST, scar);
@@ -307,7 +308,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		scar.add(stdriverRange);
 		scar.add(stdriverSafety);
 		carLayout.putConstraint(SpringLayout.WEST, stdriverPrefSpeed, 300, SpringLayout.WEST, scar);
-		carLayout.putConstraint(SpringLayout.NORTH, stdriverPrefSpeed, 30, SpringLayout.NORTH, scar);
+		carLayout.putConstraint(SpringLayout.NORTH, stdriverPrefSpeed, 40, SpringLayout.NORTH, selectedCarObject);
 		carLayout.putConstraint(SpringLayout.WEST, stdriverRange, 300, SpringLayout.WEST, scar);
 		carLayout.putConstraint(SpringLayout.NORTH, stdriverRange, 25, SpringLayout.NORTH, sldriverPrefSpeed);
 		carLayout.putConstraint(SpringLayout.WEST, stdriverSafety, 300, SpringLayout.WEST, scar);
@@ -634,76 +635,71 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	}
 	
 	private void setStatusChart() {
-		int maxSize = 0;
-		DateFormat df = new SimpleDateFormat("mm:ss");
-	    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-		for(Date date : c.driverStatusChartData.keySet()){			
-			ArrayList<String> names = (ArrayList<String>) c.driverStatusChartData.get(date).get(0);
-			ArrayList<Integer> datas = (ArrayList<Integer>) c.driverStatusChartData.get(date).get(1);
-			
-			for (int j = 0; j < names.size(); j++) {
-				String name = names.get(j);
-				Integer data = datas.get(j);
-				String dateString = df.format(date);
-				dataset.addValue(data, name, dateString);
-					
-			}	
-			if(names.size() > maxSize){
-				maxSize = names.size();
-			}
-		}    
-	    
-		JFreeChart chart = ChartFactory.createStackedBarChart(
-				"Distribution of the drivers statuses", 
-				"Time", 
-				"Number of Cars", 
-				dataset);
-//		plot = chart.getXYPlot();
-//        ValueAxis axis = plot.getDomainAxis();
-//        axis.setAutoRange(true);
-//		Object[] array =  c.driverStatusChartData.keySet().toArray();
-//		double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
-//        axis.setFixedAutoRange(range);  // 60 seconds
-//        axis = plot.getRangeAxis();
-//        axis.setRange(0, maxSize); 
-	    ChartPanel chartPanel = new ChartPanel(chart);
-	    
-	    JPanel content = new JPanel(new BorderLayout());
-        content.add(chartPanel);
-        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
-        chartFrame.setContentPane(content);
-//	    setProfileSpeedChartData();
+		if(!c.driverStatusChartData.isEmpty()){
+			int maxSize = 0;
+			DateFormat df = new SimpleDateFormat("mm:ss");
+		    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+			for(Date date : c.driverStatusChartData.keySet()){			
+				ArrayList<String> names = (ArrayList<String>) c.driverStatusChartData.get(date).get(0);
+				ArrayList<Integer> datas = (ArrayList<Integer>) c.driverStatusChartData.get(date).get(1);
+				
+				for (int j = 0; j < names.size(); j++) {
+					String name = names.get(j);
+					Integer data = datas.get(j);
+					String dateString = df.format(date);
+					dataset.addValue(data, name, dateString);
+						
+				}	
+				if(names.size() > maxSize){
+					maxSize = names.size();
+				}
+			}    
+		    
+			JFreeChart chart = ChartFactory.createStackedBarChart(
+					"Distribution of the drivers statuses", 
+					"Time", 
+					"Number of Cars", 
+					dataset);
+		    ChartPanel chartPanel = new ChartPanel(chart);
+		    
+		    JPanel content = new JPanel(new BorderLayout());
+	        content.add(chartPanel);
+	        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
+	        chartFrame.setContentPane(content);
+		}
 	}
 
 	private void setProfileSpeedChart() {
-		series = new HashMap<>();
-		dataset = new ArrayList<>();
-		series.put("Random Data", new TimeSeries("Random Data"));
-	    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
-	    JFreeChart chart = ChartFactory.createTimeSeriesChart(
-	            "Average speed of the cars in driver profiles", 
-	            "Time", 
-	            "Speed(m/s)",
-	            dataset.get(0), 
-	            true, 
-	            true, 
-	            false
-	        );
-	    plot = chart.getXYPlot();
-        ValueAxis axis = plot.getDomainAxis();
-        axis.setAutoRange(true);
-		Object[] array =  c.profileSpeedChartData.keySet().toArray();
-		double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
-        axis.setFixedAutoRange(range);  // 60 seconds
-        axis = plot.getRangeAxis();
-        axis.setRange(0.0, 200.0); 
-	    ChartPanel chartPanel = new ChartPanel(chart);
-	    
-	    JPanel content = new JPanel(new BorderLayout());
-        content.add(chartPanel);
-        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
-        chartFrame.setContentPane(content);
-	    setProfileSpeedChartData();
+		if(!c.profileSpeedChartData.isEmpty()){
+			series = new HashMap<>();
+			dataset = new ArrayList<>();
+			series.put("Random Data", new TimeSeries("Random Data"));
+		    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
+		    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+		            "Average speed of the cars in driver profiles", 
+		            "Time", 
+		            "Speed(km/h)",
+		            dataset.get(0), 
+		            true, 
+		            true, 
+		            false
+		        );
+		    plot = chart.getXYPlot();
+		    ValueAxis axis = plot.getDomainAxis();
+		    axis.setAutoRange(true);
+			Object[] array =  c.profileSpeedChartData.keySet().toArray();
+			double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
+		    axis.setFixedAutoRange(range);  // 60 seconds
+		    axis = plot.getRangeAxis();
+		    axis.setRange(0.0, 200.0); 
+		    ChartPanel chartPanel = new ChartPanel(chart);
+		    
+		    JPanel content = new JPanel(new BorderLayout());
+		    content.add(chartPanel);
+		    chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
+		    chartFrame.setContentPane(content);
+		    setProfileSpeedChartData();
+		}
 	}
 
 	private void setProfileSpeedChartData() {
@@ -724,7 +720,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 					dataset.add(new TimeSeriesCollection(series.get(name)));
 					plot.setDataset(i, dataset.get(i));
 					plot.setRenderer(i, new StandardXYItemRenderer());
-					plot.getRenderer().setSeriesPaint(i, color);
+					plot.getRendererForDataset(plot.getDataset(i)).setSeriesPaint(0, color);
 					i++;
 				} 
 				series.get(name).add(ms, data);
@@ -733,34 +729,36 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	}
 
 	private void setCarSpeedChart() {
-		series = new HashMap<>();
-		dataset = new ArrayList<>();
-		series.put("Random Data", new TimeSeries("Random Data"));
-	    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
-	    JFreeChart chart = ChartFactory.createTimeSeriesChart(
-	            "Speed of the cars", 
-	            "Time", 
-	            "Speed(m/s)",
-	            dataset.get(0), 
-	            true, 
-	            true, 
-	            false
-	        );
-	    plot = chart.getXYPlot();
-        ValueAxis axis = plot.getDomainAxis();
-        axis.setAutoRange(true);
-		Object[] array =  c.carSpeedChartData.keySet().toArray();
-		double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
-        axis.setFixedAutoRange(range);  // 60 seconds
-        axis = plot.getRangeAxis();
-        axis.setRange(0.0, 200.0); 
-	    ChartPanel chartPanel = new ChartPanel(chart);
-	    
-	    JPanel content = new JPanel(new BorderLayout());
-        content.add(chartPanel);
-        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
-        chartFrame.setContentPane(content);
-	    setCarSpeedChartData();
+		if(!c.carSpeedChartData.isEmpty()){
+			series = new HashMap<>();
+			dataset = new ArrayList<>();
+			series.put("Random Data", new TimeSeries("Random Data"));
+		    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
+		    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+		            "Speed of the cars", 
+		            "Time", 
+		            "Speed(m/s)",
+		            dataset.get(0), 
+		            false, 
+		            true, 
+		            false
+		        );
+		    plot = chart.getXYPlot();
+	        ValueAxis axis = plot.getDomainAxis();
+	        axis.setAutoRange(true);
+			Object[] array =  c.carSpeedChartData.keySet().toArray();
+			double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
+	        axis.setFixedAutoRange(range);  // 60 seconds
+	        axis = plot.getRangeAxis();
+	        axis.setRange(0.0, 200.0); 
+		    ChartPanel chartPanel = new ChartPanel(chart);
+		    
+		    JPanel content = new JPanel(new BorderLayout());
+	        content.add(chartPanel);
+	        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
+	        chartFrame.setContentPane(content);
+		    setCarSpeedChartData();
+		}
 	}
 
 	private void setCarSpeedChartData() {
@@ -771,14 +769,17 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 			
 			ArrayList<String> names = (ArrayList<String>) c.carSpeedChartData.get(ms).get(0);
 			ArrayList<Float> datas = (ArrayList<Float>) c.carSpeedChartData.get(ms).get(1);
+			ArrayList<Color> colors = (ArrayList<Color>) c.carSpeedChartData.get(ms).get(2);
 			for (int j = 0; j < names.size(); j++) {
 				String name = names.get(j);
 				Float data = datas.get(j);
+				Color color = colors.get(j);
 				if(series.get(name) == null){
 					series.put(name, new TimeSeries(name));
 					dataset.add(new TimeSeriesCollection(series.get(name)));
 					plot.setDataset(i, dataset.get(i));
 					plot.setRenderer(i, new StandardXYItemRenderer());
+					plot.getRendererForDataset(plot.getDataset(i)).setSeriesPaint(0, color);
 					i++;
 				} 
 				series.get(name).add(ms, data);
