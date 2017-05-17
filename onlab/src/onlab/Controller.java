@@ -90,7 +90,9 @@ public class Controller{
 					if(carTickCount * tickTime >=getNewCarTime()/getTimeWarp()){
 						hw.newCar();
 						carTickCount = 0;
-						setStatusChartData();
+					}
+					if(chartTickCount % 5 == 0){
+						setStatusChartData();						
 					}
 					hw.move();
 					w.setLog();
@@ -139,7 +141,7 @@ public class Controller{
 			profileSpeedDatas.set(i, profileSpeedDatas.get(i)/profileCount.get(i));
 		}
 
-		if(chartTickCount % 5 == 0){
+		if(chartTickCount % 2 == 0){
 			temp.add(names);
 			temp.add(carSpeedDatas);
 			temp.add(carColors);
@@ -150,12 +152,13 @@ public class Controller{
 		temp.add(profileSpeedDatas);		
 		profileSpeedChartData.put(now, temp);
 
-		deleteOldChartData(carSpeedChartData);
+		deleteOldCarChartData(carSpeedChartData);
 		deleteOldChartData(profileSpeedChartData);
 
 //		w.newChartData(names.toArray(), datas.toArray(), colors.toArray());
 	}
 	
+
 	private void setStatusChartData(){
 		Millisecond now = getCurrentChartTime(); 	
 		
@@ -210,6 +213,24 @@ public class Controller{
 		}
 	}
 
+	private void deleteOldCarChartData(Map<Millisecond, ArrayList> chartData) {
+		ArrayList<Millisecond> del = new ArrayList<>();
+		Date past = new Date(start.getTime());
+		if(chartTickCount>=6000){
+			past.setTime(past.getTime()+30000);
+		}
+		for(Millisecond ms : chartData.keySet()){
+			if(ms.getStart().compareTo(past) < 0){
+				del.add(ms);
+			}
+		}
+		for(Millisecond ms : del){
+			if(chartData.get(ms) != null){
+				chartData.remove(ms);
+			}
+		}
+	}
+
 	private Millisecond getCurrentChartTime() {
 		Date nowDate = new Date();
 		nowDate.setTime(start.getTime() + chartTickCount * 10);
@@ -246,6 +267,7 @@ public class Controller{
 	public void SaveGame(File file){
 		StringBuffer sb  = new StringBuffer();
 
+		sb.append("lenght: ").append(Float.toString(hw.getLenght())).append(System.lineSeparator());
 		sb.append("newCarTimer: ").append(Float.toString(getNewCarTime())).append(System.lineSeparator());
 		sb.append("timeWarp: ").append(Float.toString(hw.getTimeWarp())).append(System.lineSeparator());
 		sb.append("lanes: ").append(hw.getLaneCount()).append(System.lineSeparator());
@@ -269,18 +291,18 @@ public class Controller{
 					Car c = (Car)roadObject;
 					sb.append("Car ").append(c.id).append(System.lineSeparator());
 					sb.append("profile: ").append(c.getName()).append(System.lineSeparator());
-					sb.append("position: ").append(Double.toString(c.getPosition().getX())).append(" ").append(Double.toString(c.getPosition().getY())).append(System.lineSeparator());					
-					sb.append("actualSpeed: ").append(Float.toString(c.getCurrentSpeed())).append(System.lineSeparator());					
 					sb.append("lane: ").append(c.getLane()).append(System.lineSeparator());					
+					sb.append("position: ").append(Double.toString(c.getPosition().getX())).append(" ").append(Double.toString(c.getPosition().getY())).append(System.lineSeparator());					
 					sb.append("status: ").append(c.getDriver().getStatus().toString()).append(System.lineSeparator());					
+					sb.append("actualSpeed: ").append(Float.toString(c.getCurrentSpeed())).append(System.lineSeparator());					
 				}
 				if(roadObject instanceof Block){
 					Block b = (Block)roadObject;
 					sb.append("Block ").append(b.id).append(System.lineSeparator());
+					sb.append("lane: ").append(b.getLane()).append(System.lineSeparator());
 					sb.append("position: ").append(Double.toString(b.getPosition().getX())).append(" ").append(Double.toString(b.getPosition().getY())).append(System.lineSeparator());
 					sb.append("duration: ").append(Float.toString(b.duration)).append(System.lineSeparator());
 					sb.append("currentTime: ").append(Float.toString(b.currentTime)).append(System.lineSeparator());					
-					sb.append("lane: ").append(b.getLane()).append(System.lineSeparator());
 				}
 			}
 			sb.append("ObjectCount: ").append(RoadObject.count).append(System.lineSeparator());
@@ -305,8 +327,6 @@ public class Controller{
 		
 	}
 	public void LoadGame(File file){
-		w.chartFrame.removeAll();
-		w.chartFrame.setVisible(false);
 		BufferedReader br = null;
 		String everything = null;
 		try {
@@ -333,15 +353,22 @@ public class Controller{
 			}
 		}
 		if(everything != null){
+			restart();
 			String[] data = everything.split(System.lineSeparator());
 			Car c = null;
 			Block b = null;
 			boolean isCar = false;
+			boolean changedRes = false;
 			for (String row : data) {
 				String[] name = row.split(" ");
 				if(name != null){
-					switch (name[0]) {
-					
+					switch (name[0]) {					
+					case "lenght:":
+						Float lenght = Float.parseFloat(name[1]);
+						if(lenght != hw.getLenght()){
+							changedRes = true;
+						}
+						break;			
 					case "newCarTimer:":
 						Float nct = Float.parseFloat(name[1]);
 						w.tNewCarTimer.setText(Float.toString(nct));
@@ -403,21 +430,28 @@ public class Controller{
 						c.id = Integer.parseInt(name[1]);
 						break;
 						
+					case "profile:":
+						c.setDriverProfile(name[1]);
+						break;		
+						
 					case "Block":
 						isCar = false;
 						b = new Block();
 						b.id = Integer.parseInt(name[1]);
 						break;
 						
-					case "profile:":
-						c.setDriverProfile(name[1]);
-						break;
-						
 					case "position:":
-						if(isCar)
-							c.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
-						else
-							b.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
+						if(changedRes){
+							if(isCar)
+								c.setPosition(w.surface.getRoadPoint(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])), c.getLane()));
+							else
+								b.setPosition(w.surface.getRoadPoint(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])), b.getLane()));
+						} else {
+							if(isCar)
+								c.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
+							else
+								b.setPosition(new Point2D.Float(Float.parseFloat(name[1]), Float.parseFloat(name[2])));
+						}
 						break;
 	
 					case "actualSpeed:":
@@ -433,7 +467,12 @@ public class Controller{
 						break;
 						
 					case "status:":
-						c.getDriver().setStatus(getStatus(name[1]));
+						if("changing".equals(name[1])){
+							String status = name[1] + " " + name[2] + " " + name[3] + " " + name[4] + " " + name[5];
+							c.getDriver().setStatus(getStatus(status));
+						} else{
+							c.getDriver().setStatus(getStatus(name[1]));
+						}
 						break;
 	
 					case "duration:":

@@ -619,22 +619,25 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		chartFrame.setTitle("Traffic jam simulator - Chart of the cars speed");
 		chartFrame.setSize(500, 300);
 		chartFrame.setDefaultCloseOperation(HIDE_ON_CLOSE);
+		boolean success = false;
 		switch(cbCharts.getSelectedIndex()){
 			case 0:
-				setCarSpeedChart();
+				success = setCarSpeedChart();
 				break;
 			case 1:
-				setProfileSpeedChart();
+				success = setProfileSpeedChart();
 				break;
 			case 2:
 			default:
-				setStatusChart();
+				success = setStatusChart();
 				break;				
 		}
-		
+		if(success){
+			chartFrame.setVisible(true);
+		}
 	}
 	
-	private void setStatusChart() {
+	private boolean setStatusChart() {
 		if(!c.driverStatusChartData.isEmpty()){
 			int maxSize = 0;
 			DateFormat df = new SimpleDateFormat("mm:ss");
@@ -666,10 +669,12 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	        content.add(chartPanel);
 	        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
 	        chartFrame.setContentPane(content);
+	        return true;
 		}
+		return false;
 	}
 
-	private void setProfileSpeedChart() {
+	private boolean setProfileSpeedChart() {
 		if(!c.profileSpeedChartData.isEmpty()){
 			series = new HashMap<>();
 			dataset = new ArrayList<>();
@@ -699,7 +704,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		    chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
 		    chartFrame.setContentPane(content);
 		    setProfileSpeedChartData();
+		    return true;
 		}
+		return false;
 	}
 
 	private void setProfileSpeedChartData() {
@@ -728,7 +735,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		}
 	}
 
-	private void setCarSpeedChart() {
+	private boolean setCarSpeedChart() {
 		if(!c.carSpeedChartData.isEmpty()){
 			series = new HashMap<>();
 			dataset = new ArrayList<>();
@@ -758,7 +765,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	        chartPanel.setPreferredSize(new java.awt.Dimension(750, 520));
 	        chartFrame.setContentPane(content);
 		    setCarSpeedChartData();
+		    return true;
 		}
+		return false;
 	}
 
 	private void setCarSpeedChartData() {
@@ -868,8 +877,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 				bPause.setText("Start");
 				if(c.s == Status.RUNNING)
 					c.stop();
-				setCharts();
-				chartFrame.setVisible(true);
+				setCharts();				
 			} else if("Save".equals(text)){
 				String extension = "txt";
 				JFileChooser fc = new JFileChooser();

@@ -73,4 +73,8 @@ public class Road {
 	public void setLaneCount(int laneCount) {
 		this.laneCount = laneCount;
 	}
+	
+	public float getLenght(){
+		return (float) (getRectPartSize()*2f + getOvalPartSize()*Math.PI/2f);
+	}
 }
