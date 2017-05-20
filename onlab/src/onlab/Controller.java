@@ -43,7 +43,7 @@ public class Controller{
 	private float newCarTime = 5000.0f;
 	private int carTickCount = 0;
 	
-	public static float timeWarp = 10f;
+	public static float timeWarp = 20f;
 
 	enum Status{RUNNING, PAUSED};
 	Status s = Status.RUNNING;
@@ -141,7 +141,7 @@ public class Controller{
 			profileSpeedDatas.set(i, profileSpeedDatas.get(i)/profileCount.get(i));
 		}
 
-		if(chartTickCount % 2 == 0){
+		if(chartTickCount % 5 == 0){
 			temp.add(names);
 			temp.add(carSpeedDatas);
 			temp.add(carColors);
@@ -152,7 +152,7 @@ public class Controller{
 		temp.add(profileSpeedDatas);		
 		profileSpeedChartData.put(now, temp);
 
-		deleteOldCarChartData(carSpeedChartData);
+		deleteOldChartData(carSpeedChartData);
 		deleteOldChartData(profileSpeedChartData);
 
 //		w.newChartData(names.toArray(), datas.toArray(), colors.toArray());
@@ -272,7 +272,8 @@ public class Controller{
 		sb.append("timeWarp: ").append(Float.toString(hw.getTimeWarp())).append(System.lineSeparator());
 		sb.append("lanes: ").append(hw.getLaneCount()).append(System.lineSeparator());
 		if(HighWay.getDriverProfiles().size()>0){
-			for (Car driverProfile : HighWay.getDriverProfiles()) {
+			for (int i = 0; i < HighWay.getDriverProfiles().size(); i++) {
+				Car driverProfile = HighWay.getDriverProfiles().get(i);
 				sb.append("DriverProfile").append(System.lineSeparator());
 				sb.append("name: ").append(driverProfile.getName()).append(System.lineSeparator());
 				sb.append("maxSpeed: ").append(Float.toString(driverProfile.getMaxSpeed())).append(System.lineSeparator());
@@ -283,6 +284,7 @@ public class Controller{
 				sb.append("prefSpeed: ").append(Float.toString(driverProfile.getDriver().getPrefSpeed())).append(System.lineSeparator());
 				sb.append("rangeOfView: ").append(Float.toString(driverProfile.getDriver().getRangeOfView())).append(System.lineSeparator());
 				sb.append("safetyGap: ").append(Float.toString(driverProfile.getDriver().getSafetyGap())).append(System.lineSeparator());
+				sb.append("percent: ").append(Float.toString(HighWay.getDriverProfilesPercentages().get(i))).append(System.lineSeparator());
 			}
 		}
 		if(HighWay.getRoadObjects().size()>0){
@@ -359,6 +361,7 @@ public class Controller{
 			Block b = null;
 			boolean isCar = false;
 			boolean changedRes = false;
+			ArrayList<Float> percentages = new ArrayList<>();
 			for (String row : data) {
 				String[] name = row.split(" ");
 				if(name != null){
@@ -422,6 +425,10 @@ public class Controller{
 					case "safetyGap:":
 						c.getDriver().setSafetyGap(Float.parseFloat(name[1]));
 						hw.addDriverProfile(c);
+						break;
+						
+					case "percent:":
+						percentages.add(Float.parseFloat(name[1]));
 						break;
 						
 					case "Car":
@@ -489,7 +496,8 @@ public class Controller{
 						break;
 					}
 				}
-			}
+			}			
+			HighWay.setDriverProfilesPercentages(percentages);
 			w.setProfilesPanel();
 		}
 	}

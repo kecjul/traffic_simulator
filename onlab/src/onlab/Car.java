@@ -112,8 +112,8 @@ public class Car extends RoadObject{
 		return (float) time * 1000000000;
 	}
 
-	public float getRange(){
-		return getDriver().getRangeOfView();
+	public float getRangeinPixels(){
+		return HighWay.getKmPixelRatio() * getDriver().getRangeOfView();
 	}
 	public void setRange(float range){
 		driver.setRangeOfView(range);

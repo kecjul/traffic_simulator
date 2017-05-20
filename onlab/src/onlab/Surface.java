@@ -234,9 +234,9 @@ public class Surface extends JPanel{
 	public RoadObject getObject(Point2D.Float newPoint){
 		ArrayList<RoadObject> roadObjects2 = (ArrayList<RoadObject>) roadObjects.clone();
 		for (RoadObject roadObject : roadObjects2) {
-			if(roadObject instanceof Block && getDistance(newPoint, roadObject.getPosition()) < blockSize){
+			if(roadObject instanceof Block && Util.getDistance(newPoint, roadObject.getPosition()) < blockSize){
 				return roadObject;
-			}else if(roadObject instanceof Car && getDistance(newPoint, roadObject.getPosition()) < carSize){
+			}else if(roadObject instanceof Car && Util.getDistance(newPoint, roadObject.getPosition()) < carSize){
 				return roadObject;
 			}
 		}	
@@ -245,30 +245,21 @@ public class Surface extends JPanel{
 	
 	private Point2D.Float getCirclePoint(Float newPoint, int actLane) {
 		int r = firstOvalPartSize/2 - (actLane-1) * laneSize - laneSize/2;
-		float x = circleCenter.x + r*(newPoint.x-circleCenter.x)/getDistance(newPoint,circleCenter);
-		float y = circleCenter.y + r*(newPoint.y-circleCenter.y)/getDistance(newPoint,circleCenter);
+		float x = circleCenter.x + r*(newPoint.x-circleCenter.x)/Util.getDistance(newPoint,circleCenter);
+		float y = circleCenter.y + r*(newPoint.y-circleCenter.y)/Util.getDistance(newPoint,circleCenter);
 		
 		Point2D.Float circlePoint = new Float(x, y);		
 		return circlePoint;
 	}
 		
 	private boolean isInsideCircle(Float newPoint, int i) {
-		float distance = getDistance(newPoint, circleCenter);
+		float distance = Util.getDistance(newPoint, circleCenter);
 		if (distance < firstOvalPartSize/2 - i*laneSize){
 			return true;
 		} else {
 			return false;
 		}
-	}
-	
-	private float getDistance(Point2D.Float a, Point2D.Float b){
-		return (float) Math.sqrt(square(b.x-a.x)+square(b.y-a.y));
-	}
-	
-	private float square(float number){
-		return (number*number);
-	}
-	
+	}	
 
 	public static int getLaneCount() {
 		return laneCount;

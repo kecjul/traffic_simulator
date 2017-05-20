@@ -6,12 +6,12 @@ public class Driver {
 	private float prefSpeed = 50;
 	private float rangeOfView = 50;
 	private float safetyGap = 20;
-	private float changingPlusSpeed = 10;
+	private float changingPlusSpeed = 5;
 
 
 	float changingSpace = (float) (HighWay.road.getLaneSize()/Math.sin(Util.toRadian(15)));
 	float changingSpaceStraight = (float) Math.sqrt(Util.square(changingSpace) - Util.square(HighWay.road.getLaneSize()));
-	float stopDistance = Surface.carSize + safetyGap;
+
 	double changingDistance = Surface.carSize / Math.tan(Util.toRadian(15));
 	
 	
@@ -72,39 +72,34 @@ public class Driver {
 	}
 
 	public float drive(ArrayList<RoadObject> inSightList, Car thisCar) {
-//		logList(inSightList, thisCar);
+		logList(inSightList, thisCar);
 
 		RoadObject inSight = inSightList.get(0);
 		RoadObject behind = inSightList.get(1);
 		RoadObject leftForward = inSightList.get(2);
 		RoadObject leftBackward = inSightList.get(3);
 		RoadObject rightForward = inSightList.get(4);
-		RoadObject rightBackward = inSightList.get(5);
-		
-		stopDistance = thisCar.getSize() + getSafetyGap(thisCar.getCurrentSpeed());
-		
+		RoadObject rightBackward = inSightList.get(5);		
 		
 		float change = 0;
 		if(s == Status.CHANGELEFT){
-			change = changingDrive(thisCar, leftForward, inSight);				
+			change = changingDrive(thisCar, leftForward, leftBackward, inSight);				
 		} else if( s == Status.CHANGERIGHT){
-			change = changingDrive(thisCar, rightForward, inSight);	
+			change = changingDrive(thisCar, rightForward, rightBackward, inSight);	
 		} else {
 			//changeRight?
 			if(HighWay.isInnerMostLane(thisCar.getLane()) && canChangeRight(thisCar, inSight, behind, rightForward, rightBackward)){
 				s = Status.CHANGERIGHT;
-				change = changingDrive(thisCar, rightForward, inSight);
+				change = changingDrive(thisCar, rightForward, rightBackward, inSight);
 			} else if(HighWay.isLaneToTheSide(Util.Direction.RIGHT, thisCar.getLane()) && isNoneToTheRight(thisCar, rightForward, rightBackward)){
 				s = Status.CHANGERIGHT;
-				change = changingDrive(thisCar, rightForward, inSight);
+				change = changingDrive(thisCar, rightForward, rightBackward, inSight);
 				
 			//changeLeft?
 			} else if(inSight != null && isOvertaking(inSight, thisCar) && canChangeLeft(thisCar, inSight, behind, leftForward, leftBackward)){
 				s = Status.CHANGELEFT;
-				changeAngle(thisCar, inSight);
-				
-				change = changingDrive(thisCar, leftForward, inSight);
-				
+				changeAngle(thisCar, inSight);				
+				change = changingDrive(thisCar, leftForward, leftBackward, inSight);				
 			} else {				
 				if (inSight == null) {
 					change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
@@ -141,8 +136,8 @@ public class Driver {
 	}
 
 	private int getSafetyGap(float currentSpeed) {
-		int result = (int) (currentSpeed/getPrefSpeed() * getSafetyGap());
-		return result < 10 ? 10: result;
+		int result = (int) (currentSpeed/getPrefSpeed() * getSafetyGapinPixels());
+		return result < 5 ? 5: result;
 	}
 
 	private float normalDrive(float currentSpeed, float maxAcc) {
@@ -157,7 +152,7 @@ public class Driver {
 		float change = 0;
 		float breakDistance = getBreakDistance(inSight, thisCar);
 		
-		if (breakDistance <= 5) {
+		if (breakDistance <= 0) {
 			change = closeDrive(inSight, thisCar.getCurrentSpeed(), thisCar.getMaxAcc(), breakDistance);				
 		} else if (canChangeLeft(thisCar, inSight, behind, forward, backward)){
 			change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
@@ -196,36 +191,35 @@ public class Driver {
 	}
 
 	private float farDrive(RoadObject inSight, float currentSpeed, float maxAcc, float breakDistance) {
-		float change = 0;		
-		if(currentSpeed <= 10){
-			change = 10 - currentSpeed;
-		} else{
-			if (inSight instanceof Block) {
-				change = (currentSpeed / breakDistance) * -1;
-				s = Status.STOPPING;
-			}
-			
-			if (inSight instanceof Car) {
-				Car car = (Car) inSight;
-				float otherCarSpeed = car.getCurrentSpeed();
-				
-				if(Math.abs(otherCarSpeed - currentSpeed) < 0.001){
-					currentSpeed = otherCarSpeed;
-					change = 0;
-				}
-				
-				if (getPrefSpeed() > otherCarSpeed) {
-					change = (otherCarSpeed - currentSpeed) / breakDistance;
-				} else if (getPrefSpeed() <= otherCarSpeed) {
-					change = normalDrive(currentSpeed, maxAcc);
-				}			
-			}
+		float change = 0;	
+		
+		if (inSight instanceof Block) {
+			change = (currentSpeed / breakDistance) * -1;
+			s = Status.STOPPING;
 		}
 		
+		if (inSight instanceof Car) {
+			Car car = (Car) inSight;
+			float otherCarSpeed = car.getCurrentSpeed();
+			
+			if(Math.abs(otherCarSpeed - currentSpeed) < 0.001){
+				currentSpeed = otherCarSpeed;
+				change = 0;
+			}
+			
+			if (getPrefSpeed() > otherCarSpeed) {
+				change = (otherCarSpeed - currentSpeed) / breakDistance;
+			} else if (getPrefSpeed() <= otherCarSpeed) {
+				change = normalDrive(currentSpeed, maxAcc);
+			}			
+		}
+		if(currentSpeed <= 10 && change <= 0){
+			change = 10 - currentSpeed;
+		}
 		return change;
 	}
 
-	private float changingDrive(Car thisCar, RoadObject forward, RoadObject inSight) {
+	private float changingDrive(Car thisCar, RoadObject forward, RoadObject backward, RoadObject inSight) {
 		float tempPrefSpeed = this.prefSpeed;
 		
 		this.prefSpeed = (prefSpeed + changingPlusSpeed) > thisCar.getMaxSpeed()? thisCar.getMaxSpeed() : (prefSpeed + changingPlusSpeed);
@@ -245,10 +239,24 @@ public class Driver {
 			float inSightDistance = Util.getDistance(inSight.getPosition(), thisCar.getPosition());
 			if(inSightDistance < thisCar.getSize()/2f+inSight.getSize()/2f){
 				thisCar.setChangingAngle(75);
-			} else if(inSightDistance < thisCar.getSize()/2f+inSight.getSize()/2f + 5 && thisCar.getChangingAngle() < 75){
+			} else if(inSightDistance < thisCar.getSize()/2f+inSight.getSize()/2f + 5 
+					&& thisCar.getChangingAngle() < 75){
 				thisCar.setChangingAngle(thisCar.getChangingAngle() + 1);
 			} 
 		}	
+
+		if(backward != null){
+			float distanceForward = Util.pitagorasAC(HighWay.road.getLaneSize(), Util.getDistance(thisCar.getPosition(), backward.getPosition()));
+					
+			if(distanceForward < thisCar.getSize()/2f+backward.getSize()/2f){
+				thisCar.setChangingAngle(15);
+			} else if(distanceForward < thisCar.getSize()/2f+backward.getSize()/2f + 5 					
+					&& thisCar.getChangingAngle() > 15){
+				thisCar.setChangingAngle(thisCar.getChangingAngle() - 1);
+			} 
+			
+		}
+		
 		float change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
 		
 		this.prefSpeed = tempPrefSpeed;		
@@ -338,7 +346,7 @@ public class Driver {
 		if(inSight instanceof Car && isChanging(((Car)inSight).getDriver().getStatus())){
 			return false;
 		}
-		if(behind != null && isChangingLeft(behind)){
+		if(behind != null && behind.getLane() == thisCar.getLane() && isChangingLeft(behind)){
 			return false;			
 		}
 
@@ -347,7 +355,7 @@ public class Driver {
 		if(forward != null){
 			float distance = Util.getDistance(forward.getPosition(), thisCar.getPosition());
 			float distanceForward = (float) Math.sqrt(Util.square(distance) - Util.square(HighWay.road.getLaneSize()));
-			breakDistance = thisCar.getSize()/2 + forward.getSize()/2 + getSafetyGap();
+			breakDistance = thisCar.getSize()/2 + forward.getSize()/2 + getSafetyGapinPixels();
 			boolean forwardFarther = false;
 			if(inSight != null){
 				float distanceInSight =  Util.getDistance(inSight.getPosition(), thisCar.getPosition());
@@ -433,12 +441,12 @@ public class Driver {
 		if(inSight != null && inSight instanceof Car && isChanging(((Car)inSight).getDriver().getStatus())){
 			return false;
 		}
-		if(behind != null && isChangingLeft(behind)){
+		if(behind != null && behind.getLane() == thisCar.getLane() && isChangingRight(behind)){
 			return false;			
 		}
 		
 		float changingTime = pixelToKm(changingSpace)/(thisCar.getCurrentSpeed() + changingPlusSpeed);		
-		float breakDistance = thisCar.getSize() + getSafetyGap();		
+		float breakDistance = thisCar.getSize() + getSafetyGapinPixels();		
 		
 		if(forward != null){
 			if(forward instanceof Block){
@@ -528,16 +536,22 @@ public class Driver {
 
 	private void logList(ArrayList<RoadObject> inSightList, Car thisCar) {
 		RoadObject inSight = inSightList.get(0);
-		RoadObject leftForward = inSightList.get(1);
-		RoadObject leftBackward = inSightList.get(2);
-		RoadObject rightForward = inSightList.get(3);
-		RoadObject rightBackward = inSightList.get(4);
+		RoadObject behind = inSightList.get(1);
+		RoadObject leftForward = inSightList.get(2);
+		RoadObject leftBackward = inSightList.get(3);
+		RoadObject rightForward = inSightList.get(4);
+		RoadObject rightBackward = inSightList.get(5);
 
 		System.out.println("Car" + thisCar.id);
 		if(inSight == null){
 			System.out.println("    inSight: " + "null");			
 		} else {
 			System.out.println("    inSight: " + inSight.id);						
+		}
+		if(behind == null){
+			System.out.println("    behind: " + "null");			
+		} else {
+			System.out.println("    behind: " + behind.id);						
 		}
 		if(leftForward == null){
 			System.out.println("    leftForward: " + "null");			
@@ -562,11 +576,11 @@ public class Driver {
 	}
 	
 	private float kmToPixel(float advance){
-		return HighWay.road.getLenght()/5 * advance;
+		return HighWay.getKmPixelRatio() * advance;
 	}	
 	
 	private float pixelToKm(float advance){
-		return 5 * advance / HighWay.road.getLenght();
+		return 1 / HighWay.getKmPixelRatio() * advance;
 	}
 
 
@@ -586,6 +600,10 @@ public class Driver {
 		this.rangeOfView = rangeOfView;
 	}
 
+	public float getSafetyGapinPixels() {
+		return HighWay.getKmPixelRatio() * safetyGap;
+	}
+	
 	public float getSafetyGap() {
 		return safetyGap;
 	}

@@ -544,8 +544,8 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		tdriverRange = new JTextField(10);
 		tdriverSafety = new JTextField(10);
 		tdriverPrefSpeed.setText("80");
-		tdriverRange.setText("50");
-		tdriverSafety.setText("20");
+		tdriverRange.setText("1.0");
+		tdriverSafety.setText("0.5");
 		tdriverPrefSpeed.setToolTipText("km/h");
 		tdriverRange.setToolTipText("km");
 		tdriverSafety.setToolTipText("km");		
