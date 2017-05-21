@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -45,13 +46,13 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	JFrame chartFrame;
 	JPanel settings, combo, options, car, block, highWay, select, scar, sblock, log, profiles, dpPanel;
 	JLabel newObjectTitle, carTitle, driverTitle, blockTitle, aditional, selectedTitle, selectedCarObject, selectedBlockObject;
-	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLenght;
+	JLabel lcarMaxSpeed, lcarMaxAcc, lcarColor, ldriverPrefSpeed, ldriverRange, ldriverSafety, lblockDuration, lhwLength;
 	JLabel lLanes, ldpChooser, scolorChooser, lLaneSpan, lcarName, lNewCarTimer, lTimeWarp;
 	JLabel lDPTitle, lIDTitle, lNameTitle, lPercentageTitle, lColorTitle, lcarCount, lCarStatus;
 	JTextField tcarMaxSpeed, tcarMaxAcc, tdriverPrefSpeed, tdriverRange, tdriverSafety, 
-			tblockDuration, thwLenght, stblockDuration, sthwLengh;
+			tblockDuration, thwLength, stblockDuration, sthwLengh;
 	JTextField tcarName, tNewCarTimer, tTimeWarp;
-	JLabel  slcarMaxSpeed, slcarMaxAcc, slcarColor, sldriverPrefSpeed, sldriverRange, sldriverSafety, slblockDuration, slhwLenght;
+	JLabel  slcarMaxSpeed, slcarMaxAcc, slcarColor, sldriverPrefSpeed, sldriverRange, sldriverSafety, slblockDuration, slhwLength;
 	JLabel  stcarMaxSpeed, stcarMaxAcc, stdriverPrefSpeed, stdriverRange, stdriverSafety;
 	JComboBox<String> typeChooser , colorChooser, dpChooser, cbCharts;
 	JComboBox<Integer> cbLaneSpan, cbLanes;
@@ -616,19 +617,21 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 	
 	public void setCharts(){
 		chartFrame = new JFrame();
-		chartFrame.setTitle("Traffic jam simulator - Chart of the cars speed");
-		chartFrame.setSize(500, 300);
+		chartFrame.setSize(750, 520);
 		chartFrame.setDefaultCloseOperation(HIDE_ON_CLOSE);
 		boolean success = false;
 		switch(cbCharts.getSelectedIndex()){
 			case 0:
+				chartFrame.setTitle("Traffic jam simulator - Chart of car speed");
 				success = setCarSpeedChart();
 				break;
 			case 1:
+				chartFrame.setTitle("Traffic jam simulator - Chart of driver profile speed");
 				success = setProfileSpeedChart();
 				break;
 			case 2:
 			default:
+				chartFrame.setTitle("Traffic jam simulator - Chart of car status");
 				success = setStatusChart();
 				break;				
 		}
@@ -659,9 +662,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 			}    
 		    
 			JFreeChart chart = ChartFactory.createStackedBarChart(
-					"Distribution of the drivers statuses", 
+					"Distribution of driver statuses", 
 					"Time", 
-					"Number of Cars", 
+					"Statuses", 
 					dataset);
 		    ChartPanel chartPanel = new ChartPanel(chart);
 		    
@@ -681,7 +684,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 			series.put("Random Data", new TimeSeries("Random Data"));
 		    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
 		    JFreeChart chart = ChartFactory.createTimeSeriesChart(
-		            "Average speed of the cars in driver profiles", 
+		            "Average speed of cars in driver profiles", 
 		            "Time", 
 		            "Speed(km/h)",
 		            dataset.get(0), 
@@ -694,7 +697,7 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		    axis.setAutoRange(true);
 			Object[] array =  c.profileSpeedChartData.keySet().toArray();
 			double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
-		    axis.setFixedAutoRange(range);  // 60 seconds
+		    axis.setFixedAutoRange(60000);  // 60 seconds
 		    axis = plot.getRangeAxis();
 		    axis.setRange(0.0, 200.0); 
 		    ChartPanel chartPanel = new ChartPanel(chart);
@@ -742,9 +745,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 			series.put("Random Data", new TimeSeries("Random Data"));
 		    dataset.add(new TimeSeriesCollection(series.get("Random Data")));
 		    JFreeChart chart = ChartFactory.createTimeSeriesChart(
-		            "Speed of the cars", 
+		            "Speed of cars", 
 		            "Time", 
-		            "Speed(m/s)",
+		            "Speed(km/h)",
 		            dataset.get(0), 
 		            false, 
 		            true, 
@@ -753,9 +756,9 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		    plot = chart.getXYPlot();
 	        ValueAxis axis = plot.getDomainAxis();
 	        axis.setAutoRange(true);
-			Object[] array =  c.carSpeedChartData.keySet().toArray();
+			Object[] array = c.carSpeedChartData.keySet().toArray();
 			double range = ((Millisecond)array[array.length-1]).getFirstMillisecond() - ((Millisecond)array[0]).getFirstMillisecond();
-	        axis.setFixedAutoRange(range);  // 60 seconds
+		    axis.setFixedAutoRange(60000);  // 60 seconds
 	        axis = plot.getRangeAxis();
 	        axis.setRange(0.0, 200.0); 
 		    ChartPanel chartPanel = new ChartPanel(chart);
@@ -774,7 +777,8 @@ public class Window extends JFrame implements ActionListener, ItemListener, Mous
 		int i = 0;
 		series = new HashMap<>();
 		dataset = new ArrayList<>();
-		for(Millisecond ms : c.carSpeedChartData.keySet()){
+		Set<Millisecond> keys = c.carSpeedChartData.keySet();
+		for(Millisecond ms : keys){
 			
 			ArrayList<String> names = (ArrayList<String>) c.carSpeedChartData.get(ms).get(0);
 			ArrayList<Float> datas = (ArrayList<Float>) c.carSpeedChartData.get(ms).get(1);

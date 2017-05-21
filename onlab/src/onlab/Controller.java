@@ -49,8 +49,8 @@ public class Controller{
 	Status s = Status.RUNNING;
 
 	@SuppressWarnings("rawtypes")
-	Map<Millisecond, ArrayList> carSpeedChartData = new HashMap<Millisecond, ArrayList>();
-	Map<Millisecond, ArrayList> profileSpeedChartData = new HashMap<Millisecond, ArrayList>();
+	Map<Millisecond, ArrayList> carSpeedChartData = new TreeMap<Millisecond, ArrayList>();
+	Map<Millisecond, ArrayList> profileSpeedChartData = new TreeMap<Millisecond, ArrayList>();
 	Map<Date, ArrayList> driverStatusChartData = new TreeMap<Date, ArrayList>();
 	private int chartTickCount = 0;
 	Date start = new Date();
@@ -72,8 +72,8 @@ public class Controller{
 		
 		deltaTime = 0;
 		prevTime = 0;
-		carSpeedChartData = new HashMap<Millisecond, ArrayList>();
-		profileSpeedChartData = new HashMap<Millisecond, ArrayList>();
+		carSpeedChartData = new TreeMap<Millisecond, ArrayList>();
+		profileSpeedChartData = new TreeMap<Millisecond, ArrayList>();
 		driverStatusChartData = new TreeMap<Date, ArrayList>();
 		start = new Date();
 		past = new Date();
@@ -267,7 +267,7 @@ public class Controller{
 	public void SaveGame(File file){
 		StringBuffer sb  = new StringBuffer();
 
-		sb.append("lenght: ").append(Float.toString(hw.getLenght())).append(System.lineSeparator());
+		sb.append("length: ").append(Float.toString(hw.getLength())).append(System.lineSeparator());
 		sb.append("newCarTimer: ").append(Float.toString(getNewCarTime())).append(System.lineSeparator());
 		sb.append("timeWarp: ").append(Float.toString(hw.getTimeWarp())).append(System.lineSeparator());
 		sb.append("lanes: ").append(hw.getLaneCount()).append(System.lineSeparator());
@@ -366,9 +366,9 @@ public class Controller{
 				String[] name = row.split(" ");
 				if(name != null){
 					switch (name[0]) {					
-					case "lenght:":
-						Float lenght = Float.parseFloat(name[1]);
-						if(lenght != hw.getLenght()){
+					case "length:":
+						Float length = Float.parseFloat(name[1]);
+						if(length != hw.getLength()){
 							changedRes = true;
 						}
 						break;			

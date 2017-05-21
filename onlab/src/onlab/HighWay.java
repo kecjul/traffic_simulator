@@ -9,8 +9,8 @@ import onlab.Driver.Status;
 import onlab.Util.Direction;
 
 public class HighWay {
-	private float pixelLenght = 0;
-	private static float kmLenght = 8;	
+	private float pixelLength = 0;
+	private static float kmLength = 8;	
 	private static ArrayList<RoadObject> roadObjects = new ArrayList<RoadObject>();
 	private ArrayList<Car> deletedCars = new ArrayList<Car>();
 	public static Road road;
@@ -19,8 +19,8 @@ public class HighWay {
 	public static ArrayList<Integer> driverProfilesCount = new ArrayList<>();
 	private float timeWarp = 100;
 	
-	HighWay(float lenght) {
-		this.pixelLenght = lenght;
+	HighWay(float length) {
+		this.pixelLength = length;
 	}
 
 	public HighWay(Road road, float tl) {
@@ -28,18 +28,18 @@ public class HighWay {
 		RoadObject.count = 0;
 		HighWay.road = road;
 		setTimeWarp(tl);
-		setLenght(road.getLenght());
+		setLength(road.getLength());
 		setDriverProfilesCount();
 	}
 	public static float getKmPixelRatio(){
-		return road.getLenght() / kmLenght;
+		return road.getLength() / kmLength;
 	}
 
-	public float getLenght() {
-		return pixelLenght;
+	public float getLength() {
+		return pixelLength;
 	}
-	public void setLenght(float lenght) {
-		this.pixelLenght = lenght;
+	public void setLength(float length) {
+		this.pixelLength = length;
 	}
 
 	public static ArrayList<RoadObject> getRoadObjects() {
@@ -799,7 +799,7 @@ public class HighWay {
 	}
 	
 	private float kmToPixel(float advance){
-		return pixelLenght/kmLenght * advance;
+		return pixelLength/kmLength * advance;
 	}
 	
 	private void deleteObjects(ArrayList<RoadObject> roadObjects) {

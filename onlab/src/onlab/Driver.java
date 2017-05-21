@@ -137,7 +137,12 @@ public class Driver {
 
 	private int getSafetyGap(float currentSpeed) {
 		int result = (int) (currentSpeed/getPrefSpeed() * getSafetyGapinPixels());
-		return result < 5 ? 5: result;
+		result = result < getSafetyGapMinimum() ? getSafetyGapMinimum() : result;
+		return result;
+	}
+	
+	private int getSafetyGapMinimum() {
+		return 5;
 	}
 
 	private float normalDrive(float currentSpeed, float maxAcc) {
@@ -151,25 +156,20 @@ public class Driver {
 	private float reactiveDrive(Car thisCar, RoadObject inSight, RoadObject behind, RoadObject forward, RoadObject backward) {
 		float change = 0;
 		float breakDistance = getBreakDistance(inSight, thisCar);
-		
-		if (breakDistance <= 0) {
-			change = closeDrive(inSight, thisCar.getCurrentSpeed(), thisCar.getMaxAcc(), breakDistance);				
+		float optimalDistance = getOptimalDistance(inSight, thisCar);
+		if (optimalDistance <= 0) {
+			change = closeDrive(inSight, thisCar.getCurrentSpeed(), thisCar.getMaxAcc(), breakDistance, optimalDistance);				
 		} else if (canChangeLeft(thisCar, inSight, behind, forward, backward)){
 			change = normalDrive(thisCar.getCurrentSpeed(), thisCar.getMaxAcc());
 		} else {
-			change = farDrive(inSight, thisCar.getCurrentSpeed(), thisCar.getMaxAcc(), breakDistance);
+			change = farDrive(inSight, thisCar.getCurrentSpeed(), thisCar.getMaxAcc(), optimalDistance);
 		}
 		return change;
 	}
 
-	private float closeDrive(RoadObject inSight, float currentSpeed, float maxAcc, float breakDistance) {
+	private float closeDrive(RoadObject inSight, float currentSpeed, float maxAcc, float breakDistance, float optimalDistance) {
 		float change = 0;
-		
-		if(breakDistance > 0){
-			if(currentSpeed <= 10){
-				change = 10 - currentSpeed;
-			}			
-		} else {
+		if(breakDistance < inSight.getSize()){
 			if (inSight instanceof Block) {
 				change = currentSpeed * (-1);
 			}
@@ -178,23 +178,29 @@ public class Driver {
 				Car car = (Car) inSight;
 				float otherCarSpeed = car.getCurrentSpeed();
 				
-				if(otherCarSpeed <= 10){
-					change = currentSpeed * -1;
-				} else if (currentSpeed < otherCarSpeed) {
-					change = normalDrive(currentSpeed, maxAcc);				
+				if (currentSpeed < otherCarSpeed) {
+					change = 0;				
 				} else {
 					change = (otherCarSpeed - currentSpeed) + breakDistance;
 				}
-			}		
+			}	
+			if(breakDistance > 0 && currentSpeed <= 10){
+				change = 10 - currentSpeed;					
+			} 
+		} else {
+			change = farDrive(inSight, currentSpeed, maxAcc, breakDistance + optimalDistance);
 		}
 		return change;
 	}
 
 	private float farDrive(RoadObject inSight, float currentSpeed, float maxAcc, float breakDistance) {
 		float change = 0;	
+		float time = pixelToKm(breakDistance) / currentSpeed;
+		float tickTime = 10f /1000f /60f /60f; 
+		float tickCount = time / tickTime;
 		
 		if (inSight instanceof Block) {
-			change = (currentSpeed / breakDistance) * -1;
+			change = (currentSpeed / tickCount) * -1;
 			s = Status.STOPPING;
 		}
 		
@@ -205,11 +211,9 @@ public class Driver {
 			if(Math.abs(otherCarSpeed - currentSpeed) < 0.001){
 				currentSpeed = otherCarSpeed;
 				change = 0;
-			}
-			
-			if (getPrefSpeed() > otherCarSpeed) {
-				change = (otherCarSpeed - currentSpeed) / breakDistance;
-			} else if (getPrefSpeed() <= otherCarSpeed) {
+			} else if (getPrefSpeed() > otherCarSpeed && currentSpeed > otherCarSpeed) {
+				change = (otherCarSpeed - currentSpeed) / tickCount;
+			} else if (getPrefSpeed() <= otherCarSpeed || currentSpeed < otherCarSpeed) {
 				change = normalDrive(currentSpeed, maxAcc);
 			}			
 		}
@@ -529,6 +533,12 @@ public class Driver {
 //	}
 	
 	private float getBreakDistance(RoadObject inSight, Car thisCar){
+		float distance = Util.getDistance(inSight.getPosition(), thisCar.getPosition());
+		float breakDistance =  distance - getSafetyGapMinimum() - thisCar.getSize()/2f - inSight.getSize()/2f;
+		return breakDistance;
+	}
+
+	private float getOptimalDistance(RoadObject inSight, Car thisCar){
 		float distance = Util.getDistance(inSight.getPosition(), thisCar.getPosition());
 		float breakDistance =  distance - getSafetyGap(thisCar.getCurrentSpeed()) - thisCar.getSize()/2f - inSight.getSize()/2f;
 		return breakDistance;
